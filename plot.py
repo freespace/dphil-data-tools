@@ -129,7 +129,6 @@ class Plot(object):
     title = self.title
     comment_title = self.comment_title
     no_debug = self.no_debug
-    tstart = self._tstart0
 
     fig = self._fig
     ax = self._ax
@@ -155,14 +154,18 @@ class Plot(object):
 
       if self.labels is not None:
         lbl = self.labels[csvidx]
-      elif not self._single:
-        lbl = self._make_tstart_label(tstart)
       else:
         lbl = None
 
       xvec = csv.mat[:,0]
       yvec = csv.mat[:,1]
+
+      if self.normalise:
+        yvec /= yvec.max()
       self._plot_traces(lbl, xvec, yvec)
+
+      if self.normalise:
+        ax.hlines(0.5, xvec.min(), xvec.max(), linestyles='dotted', colors=['gray'])
 
     if self.logy == True:
       ax.set_yscale('log')
@@ -172,7 +175,7 @@ class Plot(object):
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
 
-    if not self.nolegend == True and self.labels is not None:
+    if self.labels is not None:
       ax.legend(loc=1, ncol=1, prop={'size':11})
 
     ax.set_title(title, size='medium')
@@ -183,20 +186,23 @@ class Plot(object):
       ax.set_xlim(self.xlim)
 
     yaxis = ax.get_yaxis()
-    yaxis.grid()
+    if self.hgrid:
+      yaxis.grid()
     ylim = yaxis.get_view_interval()
 
-    #xaxis = ax.get_xaxis()
+    xaxis = ax.get_xaxis()
     #xlim = xaxis.get_view_interval()
+    if self.vgrid:
+      xaxis.grid()
 
     # plot headers
     if not no_debug:
       ax.text(
-          0, 0.2,
+          0, 1.0,
           '\n'.join(headers),
-          color='0.7',
+          color='0.75',
           zorder=-1,
-          verticalalignment = 'bottom',
+          verticalalignment='top',
           **self.textkwargs)
 
     # resize the plot if figsize is given
@@ -224,18 +230,23 @@ def get_commandline_parser():
   parser.add_argument('-pdf', action='store_true', default=False, help='Plot will be saved to PDF instead of being shown')
   parser.add_argument('-pdfname', default=None, type=str, help='Name of pdf file to write to. Defaults to name of the first and last csv file joined by double underscore (__)')
 
+  parser.add_argument('-xlabel', type=str, help='X label.')
+  parser.add_argument('-ylabel', type=str, help='Y label.')
   parser.add_argument('-labels', type=str, nargs='+', help='Labels for each series to use in the legend. There must be one label per serie.')
 
-  parser.add_argument('-logy', action='store_true', default=False, help='If given, the y-axis will be log')
-  parser.add_argument('-ylim', type=float, nargs=2, default=None, help='If given, the y limits will be as given')
+  parser.add_argument('-normalise', action='store_true', default=False, help='If given, the y-values will be normalised to be between [0..1].')
 
+  parser.add_argument('-logy', action='store_true', default=False, help='If given, the y-axis will be log')
+
+  parser.add_argument('-ylim', type=float, nargs=2, default=None, help='If given, the y limits will be as given')
   parser.add_argument('-xlim', type=float, nargs=2, default=None, help='If given, the x limits will be as given')
+
+  parser.add_argument('-hgrid', action='store_true', default=False, help='If given, horizontal grid will be added.')
+  parser.add_argument('-vgrid', action='store_true', default=False, help='If given, vertical grid will be added.')
 
   parser.add_argument('-figsize', type=float, nargs=2, default=None, help='If given, the figure size will be set as given, in inches')
 
   parser.add_argument('-interp', action='store_true', default=False, help='If given, each series will be interpolated using a cubic')
-
-  parser.add_argument('-nolegend', action='store_true', default=False, help='If given, no legend will be plotted')
 
   parser.add_argument('-plotfile', type=str, default=None, help='A file containing the filenames of csvs to plot, along with optional title and comments')
 
