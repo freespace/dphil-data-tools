@@ -2,12 +2,16 @@
 from os.path import basename
 
 import numpy
+from scipy import stats as STATS
 import matplotlib.pyplot as plt
 
-def _find_x(xvec, yvec, ytarget):
+def find_width(xvec, yvec, ytarget):
   """
-  Returns a linearly interpolated x value where the function described by
-  xvec and yvec
+  Finds distance between 2 points on a curve described by xvec and yvec
+  where yvec is greater than ytarget.
+
+  The distance is defined as the distance between the left most point above
+  ytarget and the right most point above ytarget.
   """
   def interp(x1,y1,x2,y2):
     rise = y2-y1
@@ -20,16 +24,18 @@ def _find_x(xvec, yvec, ytarget):
   start = None
   end = None
   for idx in xrange(len(yvec)-1):
-    if start is None:
-      if yvec[idx]<=ytarget and yvec[idx+1]>ytarget:
-        start = interp(
-            xvec[idx], yvec[idx],
-            xvec[idx+1], yvec[idx+1])
-    else:
-      if yvec[idx]>=ytarget and yvec[idx+1]<ytarget:
-        end = interp(
-            xvec[idx], yvec[idx],
-            xvec[idx+1], yvec[idx+1])
+    if yvec[idx]<=ytarget and yvec[idx+1]>ytarget:
+      start = interp(
+          xvec[idx], yvec[idx],
+          xvec[idx+1], yvec[idx+1])
+      break
+
+  for idx in xrange(len(yvec)-1,-1, -1): 
+    if yvec[idx]<=ytarget and yvec[idx-1]>ytarget:
+      end = interp(
+          xvec[idx], yvec[idx],
+          xvec[idx-1], yvec[idx-1])
+      break
 
   if start is not None and end is not None:
     return end - start
@@ -49,7 +55,14 @@ def get_stats(xvec, yvec, noauc=False):
     - mean
     - standard deviation
     - area-under-curve [sum(y-y.median)]
-    - FWHM, valid only if you know there is a single peak
+    - FWHM, valid only if you know there is a single peak, and the mode
+      correspods to the noise floor.
+    - mode used to calculate FWHM
+
+  FWHM is calculated by finding the "half maximum" as 0.5*(peak+mode), the
+  width is calculated by finding the left and right edges, where each edge
+  is found by scanning the values from the left and right until the y value
+  is above the half maximum. some interpolation is done.
   """
 
   stdev = numpy.std(yvec)
@@ -68,10 +81,11 @@ def get_stats(xvec, yvec, noauc=False):
   m = median
   # Assume there is only one peak for now
   if peak > m+2*stdev:
-    # half maximum is defined as 0.5*(peak+miny). Can't juse use 1/2 peak
-    # as that doesn't take into account the noise floor
-    hm = 0.5*(peak + miny)
-    ret.append(_find_x(xvec, yvec, hm))
+    # use the mode to estimate the noise floor
+    mode = STATS.mode(yvec)[0][0]
+    hm = mode + 0.5*(peak-mode)
+    ret.append(find_width(xvec, yvec, hm))
+    ret.append(mode)
 
   else:
     ret += [None, None]
