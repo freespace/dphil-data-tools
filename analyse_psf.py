@@ -1,17 +1,6 @@
 #!/usr/bin/env python
 """
-This script looks at the PSF and tells me:
-  - FWHM
-  - Measure of skew
-
-The measure of skew is based on the shoulder of the PSF, in this particular
-case when the up slope exceeds gradient of 1, and  when the down slope becomes
-greater than -1. The y coordinate where these crossing occurs should be the
-same for a symmetric PSF, otherwise they won't be. The measure of skew is
-computed as:
-
-  abs(1-(up_y/down_y))
-
+This script looks at the PSF and tells me the FWHM.
 """
 import numpy as NP
 
@@ -35,7 +24,8 @@ def main(filename, *args):
 
   from stats import get_stats
   stats = get_stats(data[:,0], data[:,1], noauc=True)
-  FWHM = stats[-1]
+  print stats
+  FWHM, mode = stats[-2:]
 
   # find the x axis coordinate of when the peak occurs
   peakx = None
@@ -45,7 +35,11 @@ def main(filename, *args):
       break
 
   print 'Peak:', stats[0], 'at x=', peakx
-  print 'FWHM:',FWHM
+
+  peak = stats[0]
+  median = stats[2]
+  hm = 0.5*(peak+median)
+  print 'FWHM:',FWHM, ' using ground = ', mode, 'half width=', hm
 
 
 if __name__ == '__main__':
