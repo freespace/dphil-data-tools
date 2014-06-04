@@ -39,7 +39,7 @@ def main(filename, *args):
   peak = stats[0]
   median = stats[2]
   hm = 0.5*(peak+median)
-  print 'FWHM:',FWHM, ' using ground = ', mode, 'half width=', hm
+  print 'FWHM:',FWHM, ' using ground = ', mode, 'half maximum=', hm
 
 
 if __name__ == '__main__':
