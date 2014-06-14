@@ -5,6 +5,8 @@ import numpy
 from scipy import stats as STATS
 import matplotlib.pyplot as plt
 
+from csvtools import CSVReader
+
 def find_width(xvec, yvec, ytarget):
   """
   Finds distance between 2 points on a curve described by xvec and yvec
@@ -54,7 +56,7 @@ def get_stats(xvec, yvec, noauc=False):
     - median
     - mean
     - standard deviation
-    - area-under-curve [sum(y-y.median)]
+    - area-under-curve [sum(y-y.mode)]
     - FWHM, valid only if you know there is a single peak, and the mode
       correspods to the noise floor.
     - mode used to calculate FWHM
@@ -68,27 +70,26 @@ def get_stats(xvec, yvec, noauc=False):
   stdev = numpy.std(yvec)
   mean = numpy.mean(yvec)
   median = numpy.median(yvec)
+  mode = STATS.mode(yvec)[0][0]
   peak = max(yvec)
   miny = min(yvec)
-  auc = sum(yvec - median)
+  auc = sum(yvec - mode)
 
   start = None
   end = None
 
   ret = [peak, miny, median, mean, stdev, auc]
 
-
   m = median
   # Assume there is only one peak for now
   if peak > m+2*stdev:
     # use the mode to estimate the noise floor
-    mode = STATS.mode(yvec)[0][0]
     hm = mode + 0.5*(peak-mode)
     ret.append(find_width(xvec, yvec, hm))
     ret.append(mode)
 
   else:
-    ret += [None, None]
+    ret += [None, mode]
   return ret
 
 def stats(**kwargs):
@@ -105,10 +106,8 @@ def stats(**kwargs):
       else:
         done = True
 
-  try:
-    mat = numpy.loadtxt(csvfile, delimiter='\t')
-  except:
-    mat = numpy.loadtxt(csvfile, delimiter=',')
+  csvreader = CSVReader(csvfile)
+  mat = csvreader.mat
 
   xvec = mat[:,0]
 
@@ -116,51 +115,32 @@ def stats(**kwargs):
     return kwargs[key] or kwargs['all']
 
   print csvfile
-  print '\t\t\tMax (V)    \tMin (V)    \tMedian (V)\tMean (V)\tStdev (V)\tAUC (V)    \tFWHM (um)'
-  print '\t','-'*121
+  print ' '*16,
+  for colheader in ['Max', 'Min', 'Median', 'Mean', 'Stdev', 'AUC', 'FWHM', 'Mode']:
+    print '%-10s'%(colheader),
+  print ''
+  print ' '*16,'-'*(8*10+5)
 
   def p(yvec):
     s = get_stats(xvec, yvec)
-    return '\t\t'.join(['%.2f'%(x) for x in s])
+    for x in s:
+      print '%-10.6f'%(x),
 
-  if f('mon'):
-    mon_vec = mat[:,2]
-    print '\tMonitor\t\t', p(mon_vec)
-
-  if f('bias'):
-    bias_vec = mat[:,3]
-    print '\tVbias\t\t', p(bias_vec)
-
-  if f('ref'):
-    ref_vec = mat[:,4]
-    print '\tReflection\t', p(ref_vec)
-
-  if f('pmt'):
-    pmt_vec = mat[:,5]
-    print '\tPMT\t\t', p(pmt_vec)
-
-  if f('2'):
-    _2_vec = mat[:,1]
-    print '\t2\t\t', p(_2_vec)
+  ycnt = 1
+  for yvec in mat.T[1:]:
+    lbl = 'Y%d:'%(ycnt)
+    print '%16s'%(lbl),
+    p(yvec)
 
   print ''
 
 if __name__ == '__main__':
   import argparse
   parser = argparse.ArgumentParser(description='Computes statistics for F410 scan data')
-  parser.add_argument('-ref', action='store_true', help='Plot reflection')
-  parser.add_argument('-mon', action='store_true', help='Plot monitor')
-  parser.add_argument('-pmt', action='store_true', help='Plot PMT')
-  parser.add_argument('-bias', action='store_true', help='Plot bias')
-  parser.add_argument('-2', action='store_true', help='Plot the 2nd column')
-  parser.add_argument('-all', action='store_true', help='Plot everything')
 
   parser.add_argument('csvfiles', nargs='+', type=str, help='CSV files to compute statistics for')
 
   args = vars(parser.parse_args())
-
-  if filter(lambda x:args[x], ['ref', 'mon', 'pmt', 'bias', '2']) == []:
-    args['all'] = True
 
   for csvfile in args['csvfiles']:
     args['csvfile'] = csvfile
