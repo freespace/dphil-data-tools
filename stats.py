@@ -114,22 +114,29 @@ def stats(**kwargs):
   def f(key):
     return kwargs[key] or kwargs['all']
 
+  fieldwidth=10
+  lblwidth=16
+
   print csvfile
-  print ' '*16,
-  for colheader in ['Max', 'Min', 'Median', 'Mean', 'Stdev', 'AUC', 'FWHM', 'Mode']:
-    print '%-10s'%(colheader),
+  print ' '*lblwidth,
+  colheaders = ['Max', 'Min', 'Median', 'Mean', 'Stdev', 'AUC', 'FWHM', 'Mode']
+  fmt = '%%-%ds'%(fieldwidth)
+  for hdr in colheaders:
+    print fmt%(hdr),
   print ''
-  print ' '*16,'-'*(8*10+5)
+  print ' '*lblwidth,'-'*(len(colheaders)*fieldwidth+5)
 
   def p(yvec):
+    fmt = '%%-%d.6f'%(fieldwidth)
     s = get_stats(xvec, yvec)
     for x in s:
-      print '%-10.6f'%(x),
+      print fmt%(x),
 
   ycnt = 1
+  fmt = '%%%ds'%(lblwidth)
   for yvec in mat.T[1:]:
     lbl = 'Y%d:'%(ycnt)
-    print '%16s'%(lbl),
+    print fmt%(lbl),
     p(yvec)
 
   print ''
