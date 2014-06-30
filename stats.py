@@ -44,10 +44,13 @@ def find_width(xvec, yvec, ytarget):
   else:
     return None
 
-def get_stats(xvec, yvec, noauc=False):
+def get_stats(xvec, yvec, noauc=False, asdict=False):
   """
   Returns the statistics for the given x and y vectors. If noauc is true, then
   None will be returned instead of the area under the curve.
+
+  If asdict is True, then instead of a list a dictionary will be returned
+  with keys as indicated below, e.g. max, min, FWHM.
 
   The statistics returned are, in order:
 
@@ -55,8 +58,8 @@ def get_stats(xvec, yvec, noauc=False):
     - min
     - median
     - mean
-    - standard deviation
-    - area-under-curve [sum(y-y.mode)]
+    - stdev (standard deviation)
+    - area-under-curve (=sum(y-y.mode))
     - FWHM, valid only if you know there is a single peak, and the mode
       correspods to the noise floor.
     - mode used to calculate FWHM
@@ -90,7 +93,15 @@ def get_stats(xvec, yvec, noauc=False):
 
   else:
     ret += [None, mode]
-  return ret
+
+  if asdict:
+    retdict = {}
+    keys = ['max', 'min', 'median', 'mean', 'stdev', 'AUC', 'FWHM', 'mode']
+    for key,value in zip(keys, ret):
+      retdict[key] = value
+    return retdict
+  else:
+    return ret
 
 def stats(**kwargs):
   csvfile = kwargs['csvfile']
