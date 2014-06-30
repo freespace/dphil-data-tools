@@ -94,18 +94,6 @@ def get_stats(xvec, yvec, noauc=False):
 
 def stats(**kwargs):
   csvfile = kwargs['csvfile']
-  with open(csvfile) as csvhandle:
-    header=['','# File: '+basename(csvfile)]
-    done = False
-    while not done:
-      line = csvhandle.readline()
-      if line[0] == '#':
-        line = line.strip()
-        line = line.replace('\t',' ')
-        header.append(line)
-      else:
-        done = True
-
   csvreader = CSVReader(csvfile)
   mat = csvreader.mat
 
@@ -130,6 +118,8 @@ def stats(**kwargs):
     fmt = '%%-%d.6f'%(fieldwidth)
     s = get_stats(xvec, yvec)
     for x in s:
+      if x is None:
+        x = -1
       print fmt%(x),
 
   ycnt = 1
@@ -138,8 +128,8 @@ def stats(**kwargs):
     lbl = 'Y%d:'%(ycnt)
     print fmt%(lbl),
     p(yvec)
-
-  print ''
+    print ''
+    ycnt+=1
 
 if __name__ == '__main__':
   import argparse
