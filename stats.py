@@ -40,7 +40,10 @@ def find_width(xvec, yvec, ytarget):
       break
 
   if start is not None and end is not None:
-    return end - start
+    # take the abs value because sometimes our z values
+    # are in descending order because a scan is taken
+    # backwards
+    return abs(end - start)
   else:
     return None
 
