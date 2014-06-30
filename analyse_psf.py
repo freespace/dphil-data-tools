@@ -4,43 +4,20 @@ This script looks at the PSF and tells me the FWHM.
 """
 import numpy as NP
 
+from stats import get_stats
+from csvtools import CSVReader
+
 def main(filename, *args):
-  data = NP.genfromtxt(
-      filename,
-      delimiter=",",
-      dtype=float,
-      skip_header=2,
-      comments='#')
-  if NP.isnan(NP.sum(data)):
-    # failed to load psf data using default settings, assuming it is from
-    # imageJ and thus tab delimited with no headers
-    data = NP.genfromtxt(
-        filename,
-        dtype=float)
+  csvreader = CSVReader(filename)
+  mat = csvreader.mat
 
-  if NP.isnan(NP.sum(data)):
-    print 'nan in data file, aborting'
-    return -1
+  xvec = mat[:,0]
+  yvec = mat[:,1]
+  sdict = get_stats(xvec, yvec, asdict=True)
 
-  from stats import get_stats
-  stats = get_stats(data[:,0], data[:,1], noauc=True)
-  print stats
-  FWHM, mode = stats[-2:]
-
-  # find the x axis coordinate of when the peak occurs
-  peakx = None
-  for x,y in data[:]:
-    if y >= stats[0]:
-      peakx = x
-      break
-
-  print 'Peak:', stats[0], 'at x=', peakx
-
-  peak = stats[0]
-  median = stats[2]
-  hm = 0.5*(peak+median)
-  print 'FWHM:',FWHM, ' using ground = ', mode, 'half maximum=', hm
-
+  idxvec = yvec >= yvec.max()
+  peakx = xvec[idxvec]
+  print 'FWHM (um): %d\tz_peak (mm): %.3f'%(sdict['FWHM']*1000, peakx)
 
 if __name__ == '__main__':
   import sys
