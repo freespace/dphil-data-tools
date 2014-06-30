@@ -4,6 +4,11 @@ from scipy.optimize import leastsq
 
 import numpy
 
+"""
+XXX: Many functions here are not suitable for general use, e.g. get_data.
+Need to fix this eventually.
+"""
+
 def _fitx(xvec, yvec, yfunc):
   """
   This function computes the xoffset that yields the best fit between
