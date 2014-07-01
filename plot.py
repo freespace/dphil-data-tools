@@ -160,8 +160,12 @@ class Plot(object):
       xvec = csv.mat[:,0]
       yvec = csv.mat[:,1]
 
+      if self._kwargs.get('sub_y0', False):
+        yvec -= yvec[0]
+
       if self.normalise:
         yvec /= yvec.max()
+
       self._plot_traces(lbl, xvec, yvec)
 
       if self.normalise:
@@ -227,6 +231,8 @@ def get_commandline_parser():
   parser.add_argument('-x0', type=float, default=None, help='Value to use as x=0 when displaying positions on the x-axis. ')
   parser.add_argument('-no_debug', action='store_true', help='If given, file comments and filenames will not be added to plots.')
 
+  parser.add_argument('-sub_y0', action='store_true', help='If given, the first y value is subtracted from all y values')
+
   parser.add_argument('-pdf', action='store_true', default=False, help='Plot will be saved to PDF instead of being shown')
   parser.add_argument('-pdfname', default=None, type=str, help='Name of pdf file to write to. Defaults to name of the first and last csv file joined by double underscore (__)')
 
@@ -252,6 +258,9 @@ def get_commandline_parser():
 
   parser.add_argument('-skip', type=int, nargs=1, default=[0], help='When given a skip of n, every nth file is plotted, all other files with the exception of the first and last, is skipped.')
 
+  parser.add_argument('-max_traces', type=int, nargs=1, default=[-1], help='When given, no more than max_traces number of traces will be plotted')
+  parser.add_argument('-start_offset', type=int, nargs=1, default=[0], help='When given, the first start_offset number of files are ignored. This is applied before skip is applied')
+
   parser.add_argument('csvfiles', nargs='*', help='CSV files to plot')
 
   return parser
@@ -276,15 +285,29 @@ if __name__ == '__main__':
     else:
       l.extend(csvfiles)
 
-  # apply skip
   csvfiles = cmdargs['csvfiles']
+
+  # apply start_offset
+  start_offset = cmdargs['start_offset'][0]
+  csvfiles = csvfiles[start_offset:]
+
+  # apply skip
   skip = cmdargs['skip'][0]
   last = csvfiles[-1]
   csvfiles = csvfiles[0::skip+1]
 
+  # apply max_traces
+  max_traces = cmdargs['max_traces'][0]
+  if max_traces >= 0:
+    csvfiles = csvfiles[:max_traces]
+
   # we always want to plot the first and last file
-  if csvfiles[-1] != last:
-    csvfiles.append(last)
+  # XXX Do we?
+  # if csvfiles[-1] != last:
+  #  csvfiles.append(last)
+
+  if len(csvfiles) < 1:
+    print 'No files to plot: no files given or start_offset is too high or max_traces is 0'
 
   cmdargs['csvfiles'] = csvfiles
 
