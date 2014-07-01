@@ -53,7 +53,10 @@ class Plot(object):
         'markersize':4,
         'linewidth':1.2,
         }
-    self.textkwargs = {'transform':self._ax.transAxes}
+    self.textkwargs = {
+        'transform':self._ax.transAxes,
+        'size': 11,
+        }
 
     # tstart of the first trace
     self._tstart0 = self.t0
@@ -136,6 +139,20 @@ class Plot(object):
     headers = ['']
 
     ylim = self.ylim
+
+    if self.labels is None and len(csvfiles) > 1:
+      # if no labels are specified and we have multiple
+      # csv files, then when we plot it is confusing which
+      # trace corresponds to which file. In these cases
+      # we populate the labels with the basename of the csvfiles
+      self.labels = map(basename, csvfiles)
+      def shorten(s):
+        if len(s) > 16:
+          return s[:3]+'...'+s[-10:]
+        else:
+          return s
+      self.labels = map(shorten, self.labels)
+
     if ylim is not None:
       ax.set_autoscaley_on(False)
       ax.set_ylim(ylim)
@@ -180,7 +197,15 @@ class Plot(object):
     ax.set_ylabel(ylabel)
 
     if self.labels is not None:
-      ax.legend(loc=1, ncol=1, prop={'size':11})
+      if len(self.labels) > 5:
+        fontsize = 8
+      else:
+        fontsize = 11
+
+      ax.legend(
+          loc='upper right',
+          ncol=1,
+          prop={'size':fontsize})
 
     ax.set_title(title, size='medium')
     ax.set_autoscalex_on(False)
