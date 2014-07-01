@@ -181,7 +181,9 @@ class Plot(object):
         yvec -= yvec[0]
 
       if self.normalise:
-        yvec /= yvec.max()
+        yrange = yvec.max() - yvec.mean()
+        yvec -= yvec.mean()
+        yvec /= yrange
 
       self._plot_traces(lbl, xvec, yvec)
 
