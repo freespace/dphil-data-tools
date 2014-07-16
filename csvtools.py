@@ -62,6 +62,28 @@ class CSVReader(object):
     return self.comments()
 
   @property
+  def column_headers(self):
+    """
+    Returns the column headers, defined as the first line encountered that
+    does is not a comment and contains one or more letters (a-z,A-Z). Headers
+    are split on , and returned as a list. No support for quoting, thus no
+    way to escape ,
+
+    If the first line does not contain a letter, None is returned
+    """
+    with open(self._csvfile) as csvhandle:
+      done = False
+      while not done:
+        line = csvhandle.readline()
+        if line[0] != '#':
+          for c in line:
+            if c.isalpha():
+              return map(str.strip,line.split(','))
+          else:
+            done = True
+    return None
+
+  @property
   def mat(self):
     # lazy load mat, b/c sometimes we just want the header
     if self._mat is None:
