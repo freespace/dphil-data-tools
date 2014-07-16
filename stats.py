@@ -138,8 +138,14 @@ def stats(**kwargs):
 
   ycnt = 1
   fmt = '%%%ds'%(lblwidth)
+
+  # ignore the first header since it is the position
+  colhdrs = csvreader.column_headers[1:]
   for yvec in mat.T[1:]:
-    lbl = 'Y%d:'%(ycnt)
+    if len(colhdrs) >= ycnt:
+      lbl = colhdrs[ycnt-1]
+    else:
+      lbl = 'Y%d:'%(ycnt)
     print fmt%(lbl),
     p(yvec)
     print ''
@@ -156,3 +162,4 @@ if __name__ == '__main__':
   for csvfile in args['csvfiles']:
     args['csvfile'] = csvfile
     stats(**args)
+    print ''
