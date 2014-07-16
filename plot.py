@@ -276,6 +276,7 @@ def get_commandline_parser():
   parser.add_argument('-no_debug', action='store_true', help='If given, file comments and filenames will not be added to plots.')
 
   parser.add_argument('-sub_y0', action='store_true', help='If given, the first y value is subtracted from all y values')
+  parser.add_argument('-sub_x0', action='store_true', help='If given, the first x value is subtracted from all x values')
 
   parser.add_argument('-pdf', action='store_true', default=False, help='Plot will be saved to PDF instead of being shown')
   parser.add_argument('-pdfname', default=None, type=str, help='Name of pdf file to write to. Defaults to name of the first and last csv file joined by double underscore (__)')
