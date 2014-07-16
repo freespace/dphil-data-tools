@@ -103,10 +103,12 @@ class Plot(object):
     # on OS X the tk window is behind everyone else by default, so we use
     # apple scripting to bring it to the front
     # http://stackoverflow.com/questions/1892339/make-tkinter-jump-to-the-front
-    import sys
-    if sys.platform == 'darwin':
-      import os
-      os.system('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "Python" to true' ''')
+    #
+    # This stopped working for me in OS X 10.9.3, so I am disabling it
+    #import sys
+    #if sys.platform == 'darwin':
+    #  import os
+    #  os.system('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "Python" to true' ''')
 
     PLT.show()
 
