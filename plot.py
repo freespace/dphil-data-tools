@@ -234,13 +234,13 @@ class Plot(object):
       ax.set_xlim(self.xlim)
 
     yaxis = ax.get_yaxis()
-    if self.hgrid:
+    if self.hgrid or self.grid:
       yaxis.grid()
     ylim = yaxis.get_view_interval()
 
     xaxis = ax.get_xaxis()
     #xlim = xaxis.get_view_interval()
-    if self.vgrid:
+    if self.vgrid or self.grid:
       xaxis.grid()
 
     # plot headers
@@ -293,6 +293,7 @@ def get_commandline_parser():
 
   parser.add_argument('-hgrid', action='store_true', default=False, help='If given, horizontal grid will be added.')
   parser.add_argument('-vgrid', action='store_true', default=False, help='If given, vertical grid will be added.')
+  parser.add_argument('-grid', action='store_true', default=False, help='If given, vertical grid will be added.')
 
   parser.add_argument('-figsize', type=float, nargs=2, default=None, help='If given, the figure size will be set as given, in inches')
 
