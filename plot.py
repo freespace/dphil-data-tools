@@ -73,13 +73,25 @@ class Plot(object):
   def save_to_pdf(self):
     pdfname = self.pdfname
     csvfiles = self.csvfiles
+    suffix = ''
+    if self.normalise:
+      suffix += 'NR'
+    if self.sub_y0:
+      suffix += 'Y0'
+    if self.sub_x0:
+      suffix += 'X0'
+
+    if len(suffix):
+      suffix = '-'+suffix
+    suffix += '.pdf'
+
     if pdfname is None:
       startfile = splitext(csvfiles[0])[0]
       if len(csvfiles) == 1:
-        pdfname = startfile + '.pdf'
+        pdfname = startfile + suffix
       else:
         endfile = splitext(basename(csvfiles[-1]))[0]
-        pdfname = startfile+'__'+endfile+'.pdf'
+        pdfname = startfile+'__'+endfile+suffix
 
     save_to_pdf(self._fig, pdfname)
 
