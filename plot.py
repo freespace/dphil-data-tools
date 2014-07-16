@@ -191,6 +191,9 @@ class Plot(object):
       xvec = csv.mat[:,0]
       yvec = csv.mat[:,1]
 
+      if self._kwargs.get('sub_x0', False):
+        xvec -= xvec[0]
+
       if self._kwargs.get('sub_y0', False):
         yvec -= yvec[0]
 
