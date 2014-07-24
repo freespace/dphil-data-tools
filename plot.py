@@ -70,8 +70,8 @@ class Plot(object):
     else:
       raise AttributeError('No attribute named %s found'%(attr))
 
-  def save_to_pdf(self):
-    pdfname = self.pdfname
+  def _get_save_to_filename(self, ext):
+    filename = self.filename
     csvfiles = self.csvfiles
     suffix = ''
     if self.normalise:
@@ -83,17 +83,32 @@ class Plot(object):
 
     if len(suffix):
       suffix = '-'+suffix
-    suffix += '.pdf'
+    suffix += '.'+ext
 
-    if pdfname is None:
+    if filename is None:
       startfile = splitext(csvfiles[0])[0]
       if len(csvfiles) == 1:
-        pdfname = startfile + suffix
+        filename = startfile + suffix
       else:
         endfile = splitext(basename(csvfiles[-1]))[0]
-        pdfname = startfile+'__'+endfile+suffix
+        filename = startfile+'__'+endfile+suffix
 
-    save_to_pdf(self._fig, pdfname)
+    return filename
+
+  def savefig(self, *args, **kwargs):
+    if not 'bbox_inches' in kwargs is None:
+      kwargs['bbox_inches'] = 'tight'
+
+    self._fig.savefig(*args, **kwargs)
+    print 'Plot saved to file:',args[0]
+
+  def save_to_pdf(self):
+    pdfname = self._get_save_to_filename('pdf')
+    self.savefig(pdfname)
+
+  def save_to_png(self):
+    pngname = self._get_save_to_filename('png')
+    self.savefig(pngname, dpi=300)
 
   def show(self):
     fig = self._fig
@@ -193,6 +208,8 @@ class Plot(object):
 
       if self._kwargs.get('sub_x0', False):
         xvec -= xvec[0]
+        
+      xvec *= self.xmultiplier
 
       if self._kwargs.get('sub_y0', False):
         yvec -= yvec[0]
@@ -210,8 +227,18 @@ class Plot(object):
     if self.logy == True:
       ax.set_yscale('log')
 
-    xlabel = self._kwargs.get('xlabel', 'X LABEL')
-    ylabel = self._kwargs.get('ylabel', 'Y LABEL')
+    def _xylabel_by_source():
+      if csv.csv_source == 'SIOS':
+        return 'Z Position (mm)', 'Fluoresence (V)'
+      else:
+        return 'X LABEL', 'Y LABEL'
+
+    xlabel, ylabel = _xylabel_by_source()
+    if self.xlabel is not None:
+      xlabel = self.xlabel
+    if self.ylabel is not None:
+      ylabel = self.ylabel
+
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
 
@@ -278,8 +305,11 @@ def get_commandline_parser():
   parser.add_argument('-sub_y0', action='store_true', help='If given, the first y value is subtracted from all y values')
   parser.add_argument('-sub_x0', action='store_true', help='If given, the first x value is subtracted from all x values')
 
+  parser.add_argument('-xmultiplier', type=float, default=1, help='Value to multiplu x by before plotting')
+
   parser.add_argument('-pdf', action='store_true', default=False, help='Plot will be saved to PDF instead of being shown')
-  parser.add_argument('-pdfname', default=None, type=str, help='Name of pdf file to write to. Defaults to name of the first and last csv file joined by double underscore (__)')
+  parser.add_argument('-png', action='store_true', default=False, help='Plot will be saved to PNG instead of being shown')
+  parser.add_argument('-filename', default=None, type=str, help='Name of output file to write to. Defaults to name of the first and last csv file joined by double underscore (__)')
 
   parser.add_argument('-xlabel', type=str, help='X label.')
   parser.add_argument('-ylabel', type=str, help='Y label.')
@@ -359,8 +389,16 @@ if __name__ == '__main__':
 
   p = Plot(**cmdargs)
   p.plot()
+
+  shouldshow = True
   if cmdargs['pdf']:
     p.save_to_pdf()
-  else:
+    shouldshow = False
+
+  if cmdargs['png']:
+    p.save_to_png()
+    shouldshow = False
+
+  if shouldshow:
     p.show()
 
