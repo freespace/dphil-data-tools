@@ -14,7 +14,7 @@ from scipy.interpolate import interp1d
 import matplotlib.pyplot as PLT
 
 import csvtools as CSV
-from utils import keypress, save_to_pdf
+from utils import keypress
 
 
 import itertools
