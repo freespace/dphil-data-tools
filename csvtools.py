@@ -119,12 +119,11 @@ class CSVReader(object):
         return numpy.loadtxt(lines, delimiter=',', skiprows=1)
 
     def _load_LECROYWR62Xi():
-      sef._csv_source = 'LECROYWR62Xi'
+      self._csv_source = 'LECROYWR62Xi'
       with open(self._csvfile) as fh:
         lines = fh.readlines()
         # look for the first line containing a # which indicates
         # end of header
-        done = False
         while not lines[0].startswith('#'):
           lines.pop(0)
 
@@ -134,11 +133,12 @@ class CSVReader(object):
     if self._mat is None:
       loaders = (_load, _load_SIOS, _load_LECROYWR62Xi)
       mat = None
+      exdict = dict()
       for loader in loaders:
         try:
           mat = loader()
-          break
-        except:
+        except Exception, ex:
+          exdict[str(loader)] = ex
           # reset _csv_source as loaders set it as the first thing they
           # do. Technically not needed since the last loader to succeed
           # will set _csv_source properly, and seeing as as fail the
@@ -146,7 +146,12 @@ class CSVReader(object):
           self._csv_source = None
           continue
 
-      assert mat is not None, 'Could not load csv'
+      if mat is None:
+        print 'Could not load CSV, following exception encountered:'
+        for loader, ex in exdict.items():
+          print loader+':', ex
+        assert mat is not None, 'Could not load csv'
+
       self._mat = mat
     return self._mat
 
