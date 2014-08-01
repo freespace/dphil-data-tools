@@ -39,10 +39,11 @@ def savefig(filename, silent=False, confirm=True):
       sys.stdout.flush()
       i, o, e = select.select([sys.stdin], [], [], 10)
       if i is not None:
-        l = sys.stdin.readline().strip
-        if l in 'nN':
+        l = sys.stdin.readline().strip()
+        if len(l) and l in 'nN':
           return
-    except:
+    except Exception, ex:
+      print ex
       return
 
   plt.savefig(filename, dpi=300, bbox_inches='tight')
