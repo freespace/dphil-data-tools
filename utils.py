@@ -20,3 +20,31 @@ def do_spinner(text=''):
   sys.stdout.flush()
 
   spinner_cnt = (spinner_cnt+1)%11
+
+def savefig(filename, silent=False, confirm=True):
+  """
+  Wrapper around matplotlib's savefig with some common options built in
+
+  If silent is True, then 'Saved to....' will not be emitted.
+
+  If confirm is False, then the user will not be asked to confirm the
+  operation. There is a 5s timeout on the confirmation on unix platforms
+  only.
+
+  """
+  if confirm:
+    try:
+      import sys, select
+      print '\nSave to', filename, '? [Y/n](5s timeout): ',
+      sys.stdout.flush()
+      i, o, e = select.select([sys.stdin], [], [], 10)
+      if i is not None:
+        l = sys.stdin.readline().strip
+        if l in 'nN':
+          return
+    except:
+      return
+
+  plt.savefig(filename, dpi=300, bbox_inches='tight')
+  if not silent:
+    print 'Saved to', filename
