@@ -175,9 +175,12 @@ class Plot(object):
       # trace corresponds to which file. In these cases
       # we populate the labels with the basename of the csvfiles
       self.labels = map(basename, csvfiles)
+
+      # shorten/truncate filenames in the legend if they are over 16
+      # characters
       def shorten(s):
         if len(s) > 16:
-          return s[:3]+'...'+s[-10:]
+          return s[:10]+'..'+s[-3:]
         else:
           return s
       self.labels = map(shorten, self.labels)
