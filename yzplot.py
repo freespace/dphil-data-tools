@@ -16,19 +16,12 @@ def plot_yz_plane_using_scans(scanIDs, yposvec, **imshowkwargs):
   Any unknown kwargs are passed onto imshow.
   """
 
-  defimshowkwargs = {
-      'interpolation':'bilinear',
-      'cmap':'jet',
-      'aspect':'auto'
-      }
-  defimshowkwargs.update(imshowkwargs)
-
   labels = ('Z position (mm)', 'Y position (mm)')
 
   ret = plot_plane_using_scans( scanIDs,
                                 yposvec,
                                 labels=labels,
-                                **defimshowkwargs)
+                                **imshowkwargs)
 
   cb = plt.colorbar()
   cb.set_label('Fluorescence (V)')
