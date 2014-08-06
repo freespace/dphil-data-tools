@@ -136,15 +136,11 @@ class CSVReader(object):
       exdict = dict()
       for loader in loaders:
         try:
+          self._csv_source = None
           mat = loader()
+          break
         except Exception, ex:
           exdict[str(loader)] = ex
-          # reset _csv_source as loaders set it as the first thing they
-          # do. Technically not needed since the last loader to succeed
-          # will set _csv_source properly, and seeing as as fail the
-          # assert below if no loader succeeded, it ought not to matter.
-          self._csv_source = None
-          continue
 
       if mat is None:
         print 'Could not load CSV, following exception encountered:'
