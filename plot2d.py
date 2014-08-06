@@ -85,6 +85,13 @@ def plot_plane_using_scans(scanIDs, posvec, labels=None, **imshowkwargs):
   X or Y. The position of each scan is given by posvec, which is 1-1 matched
   to scanIDs, and must be monotonic.
 
+  The resulting image will have the correct aspect ratio and the correct size
+  in inches, assuming posvec contains all measurements in mm, and all scans have
+  z position recorded as mm. To save an image that has the same pixel size as
+  microscope images, use a dpi equal to:
+
+    25.4/<pixel size in um> * 1000
+
   In addition to plotting, the result 2D array is also returned.
 
   labels should be a 2 tuple used to label the horizontal and vertical
@@ -129,16 +136,32 @@ def plot_plane_using_scans(scanIDs, posvec, labels=None, **imshowkwargs):
   # rename accordingly
   commonz = commonx
 
+  # compute the width and height
+  extent= [commonz.min(), commonz.max(), min(posvec), max(posvec)]
+
+  # these are in mm
+  width= extent[1] - extent[0]
+  height = extent[3] - extent[2]
+
+  # convert to inches
+  width /= 25.4
+  height /= 25.4
+
   # use given imshow args if present
   defimshowkwargs = {
       'interpolation':'bilinear',
       'cmap':'jet',
-      'aspect':'auto'
+      'aspect':'auto',
       }
   defimshowkwargs.update(imshowkwargs)
 
+  fig = plt.figure(figsize=(width, height))
+  ax = plt.Axes(fig, [0, 0, 1, 1])
+  ax.set_axis_off()
+  fig.add_axes(ax)
+
   plt.imshow(ymat,
-             extent=[commonz.min(), commonz.max(), min(posvec), max(posvec)],
+             extent=extent,
              **defimshowkwargs)
 
   if labels is not None:
