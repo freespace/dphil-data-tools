@@ -129,12 +129,17 @@ def plot_plane_using_scans(scanIDs, posvec, labels=None, **imshowkwargs):
   # rename accordingly
   commonz = commonx
 
-  if not 'aspect' in imshowkwargs:
-    imshowkwargs['aspect'] = 'auto'
+  # use given imshow args if present
+  defimshowkwargs = {
+      'interpolation':'bilinear',
+      'cmap':'jet',
+      'aspect':'auto'
+      }
+  defimshowkwargs.update(imshowkwargs)
 
   plt.imshow(ymat,
              extent=[commonz.min(), commonz.max(), min(posvec), max(posvec)],
-             **imshowkwargs)
+             **defimshowkwargs)
 
   if labels is not None:
     assert len(labels) == 2, 'Labels must be a 2 tuple'
