@@ -21,7 +21,7 @@ def do_spinner(text=''):
 
   spinner_cnt = (spinner_cnt+1)%11
 
-def savefig(filename, formats=None, figure=None, silent=False, pixelsize_um=3.2):
+def savefig(filename, formats=None, figure=None, silent=False, pixelsize_um=None):
   """
   Wrapper around matplotlib's savefig with some common options built in
 
@@ -58,7 +58,11 @@ def savefig(filename, formats=None, figure=None, silent=False, pixelsize_um=3.2)
       print figure.get_figwidth()
       print figure.get_figheight()
 
-      dpi = 1000*25.4/pixelsize_um
+      if pixelsize_um is not None:
+        dpi = 1000*25.4/pixelsize_um
+      else:
+        dpi = None
+
       figure.savefig(fname, dpi=dpi)
 
       if not silent:
