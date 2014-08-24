@@ -156,15 +156,17 @@ def plot_plane_using_scans(scanIDs, posvec, labels=None, medium_n=1.33, imagej_c
   # rename accordingly
   commonz = commonx
 
-  # compute the width and height
+  # compute the width and height, accounting for medium refractive index
   zstart = commonz.min()
   zend = commonz.max()
   zrange = zend - zstart
   zend = zstart + zrange * medium_n
 
-  extent= [zstart, zend, min(posvec), max(posvec)]
+  extent = [zstart, zend, min(posvec), max(posvec)]
 
-  # apply scaling
+  # apply scaling, but backup the original first since these define
+  # the actual physical extent of the image
+  actualextent = extent
   extent = map(lambda x:x*scale, extent)
 
   # these are in mm
@@ -192,27 +194,22 @@ def plot_plane_using_scans(scanIDs, posvec, labels=None, medium_n=1.33, imagej_c
     newwidth = float(width) + 1.5
     newheight = float(height) + 1.5
 
-    print newwidth, newheight
-    
-    xoffset = (newwidth - width) / 2
+    xoffset = 1
     xoffsetpc = xoffset / newwidth
 
-    yoffset = (newheight - height) / 2
+    yoffset = 1
     yoffsetpc = yoffset / newheight
 
     widthpc = width / newwidth
     heightpc = height / newheight
 
     fig = plt.figure(figsize=(newwidth, newheight))
-    print [xoffsetpc, yoffsetpc, widthpc, heightpc]
     ax = plt.Axes(fig, [xoffsetpc, yoffsetpc, widthpc, heightpc])
     
-    extent = [xoffset, xoffset+width, yoffset, yoffset+width]
-
   fig.add_axes(ax)
 
   plt.imshow(ymat,
-             extent=extent,
+             extent=actualextent,
              **defimshowkwargs)
 
   if labels is not None:
