@@ -4,6 +4,8 @@ XZ or YZ planes by combining Z scans taken at different
 X or Y positions
 """
 
+from __future__ import division
+
 from scipy.interpolate import interp1d
 import numpy as np
 import matplotlib.pyplot as plt
@@ -79,7 +81,7 @@ def get_xvec_yfunc_from_scan(scanID, workdir='.'):
 
   return commonx, avgyfunc
 
-def plot_plane_using_scans(scanIDs, posvec, labels=None, **imshowkwargs):
+def plot_plane_using_scans(scanIDs, posvec, labels=None, medium_n=1.33, imagej_compat=False, with_tics=False, scale=1.0, **imshowkwargs):
   """
   Plots a nZ plane image using scans specified via scanIDs, where n is one of
   X or Y. The position of each scan is given by posvec, which is 1-1 matched
@@ -92,12 +94,30 @@ def plot_plane_using_scans(scanIDs, posvec, labels=None, **imshowkwargs):
 
     25.4/<pixel size in um> * 1000
 
+  Note that z axis will be multiplied by medium_n, which by default is
+  1.33, that of water and the most common medium used.
+
   In addition to plotting, the result 2D array is also returned.
 
   labels should be a 2 tuple used to label the horizontal and vertical
   axis of the image.
 
+  If imagej_compat is True, no interpolation will be done, and a gray colour map
+  that maps to 0..10 will be used.
+
+  If with_tics is True, then axis tics and labels will be added to the image.
+  Note that if you use this, then you probably need to set scale to something
+  like 50, or the figure, which is the same physical size as the image, will
+  be too small to accomodate axes tics and such.
+
+  Scale, defaults to 1.0. Image width and height is multiplied by this factor
+  before plotting. Useful mostly when used with with_tics.
+
   Any unknown kwargs are passed onto imshow.
+
+  Returned are:
+    - commonZ: the Z axis values
+    - ymat: the scans in matrix form, one scan per row
   """
   assert len(scanIDs) == len(posvec), 'Too many scanIDs for posvec, or the other way around'
   assert len(scanIDs) == len(set(scanIDs)), 'Duplicate scanID found'
@@ -137,7 +157,15 @@ def plot_plane_using_scans(scanIDs, posvec, labels=None, **imshowkwargs):
   commonz = commonx
 
   # compute the width and height
-  extent= [commonz.min(), commonz.max(), min(posvec), max(posvec)]
+  zstart = commonz.min()
+  zend = commonz.max()
+  zrange = zend - zstart
+  zend = zstart + zrange * medium_n
+
+  extent= [zstart, zend, min(posvec), max(posvec)]
+
+  # apply scaling
+  extent = map(lambda x:x*scale, extent)
 
   # these are in mm
   width= extent[1] - extent[0]
@@ -155,9 +183,32 @@ def plot_plane_using_scans(scanIDs, posvec, labels=None, **imshowkwargs):
       }
   defimshowkwargs.update(imshowkwargs)
 
-  fig = plt.figure(figsize=(width, height))
-  ax = plt.Axes(fig, [0, 0, 1, 1])
-  ax.set_axis_off()
+  if not with_tics:
+    fig = plt.figure(figsize=(width, height))
+    ax = plt.Axes(fig, [0, 0, 1, 1])
+    ax.set_axis_off()
+  else:
+    # add an extra 1.5 inch to accomodate tics and such
+    newwidth = float(width) + 1.5
+    newheight = float(height) + 1.5
+
+    print newwidth, newheight
+    
+    xoffset = (newwidth - width) / 2
+    xoffsetpc = xoffset / newwidth
+
+    yoffset = (newheight - height) / 2
+    yoffsetpc = yoffset / newheight
+
+    widthpc = width / newwidth
+    heightpc = height / newheight
+
+    fig = plt.figure(figsize=(newwidth, newheight))
+    print [xoffsetpc, yoffsetpc, widthpc, heightpc]
+    ax = plt.Axes(fig, [xoffsetpc, yoffsetpc, widthpc, heightpc])
+    
+    extent = [xoffset, xoffset+width, yoffset, yoffset+width]
+
   fig.add_axes(ax)
 
   plt.imshow(ymat,
@@ -168,4 +219,5 @@ def plot_plane_using_scans(scanIDs, posvec, labels=None, **imshowkwargs):
     assert len(labels) == 2, 'Labels must be a 2 tuple'
     plt.xlabel(labels[0])
     plt.ylabel(labels[1])
+
   return commonz, ymat
