@@ -139,9 +139,8 @@ def stats(**kwargs):
   ycnt = 1
   fmt = '%%%ds'%(lblwidth)
 
-  # ignore the first header since it is the position
-  colhdrs = csvreader.column_headers[1:]
-  for yvec in mat.T[1:]:
+  colhdrs = csvreader.column_headers
+  for yvec in mat.T:
     if len(colhdrs) >= ycnt:
       lbl = colhdrs[ycnt-1]
     else:
