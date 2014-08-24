@@ -179,8 +179,8 @@ class Plot(object):
       # shorten/truncate filenames in the legend if they are over 16
       # characters
       def shorten(s):
-        if len(s) > 16:
-          return s[:10]+'..'+s[-3:]
+        if len(s) > 24:
+          return s[:10]+'..'+s[-8:]
         else:
           return s
       self.labels = map(shorten, self.labels)
@@ -339,8 +339,9 @@ def get_commandline_parser():
 
   parser.add_argument('-max_traces', type=int, nargs=1, default=[-1], help='When given, no more than max_traces number of traces will be plotted')
   parser.add_argument('-start_offset', type=int, nargs=1, default=[0], help='When given, the first start_offset number of files are ignored. This is applied before skip is applied')
+  parser.add_argument('-include_first_last', action='store_true', default=False, help='If given, the first and last csv given is always plotted, regardless of skip, max_traces, or start_offset')
 
-  parser.add_argument('csvfiles', nargs='*', help='CSV files to plot')
+  parser.add_argument('csvfiles', nargs='+', help='CSV files to plot')
 
   return parser
 
@@ -366,6 +367,9 @@ if __name__ == '__main__':
 
   csvfiles = cmdargs['csvfiles']
 
+  firstcsv = csvfiles[0]
+  lastcsv = csvfiles[-1]
+
   # apply start_offset
   start_offset = cmdargs['start_offset'][0]
   csvfiles = csvfiles[start_offset:]
@@ -380,10 +384,12 @@ if __name__ == '__main__':
   if max_traces >= 0:
     csvfiles = csvfiles[:max_traces]
 
-  # we always want to plot the first and last file
-  # XXX Do we?
-  # if csvfiles[-1] != last:
-  #  csvfiles.append(last)
+  if cmdargs['include_first_last']:
+    if not csvfiles[0] == firstcsv:
+      csvfiles.insert(0, firstcsv)
+
+    if not csvfiles[-1] == lastcsv:
+      csvfiles.append(lastcsv)
 
   if len(csvfiles) < 1:
     print 'No files to plot: no files given or start_offset is too high or max_traces is 0'
