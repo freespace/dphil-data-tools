@@ -57,7 +57,10 @@ def get_xvec_yfunc_from_scan(scanID, workdir='.'):
 
   for csv in csvfiles:
     xvec, yvec = get_xyvec_from_csv(csv)
-    yfunc = interp1d(xvec, yvec)
+
+    # this assumes yvec[0] and yvec[-1] is background
+    background = (yvec[0] + yvec[-1])/2
+    yfunc = interp1d(xvec, yvec, bounds_error=False, fill_value=background)
     yfuncvec.append(yfunc)
 
     # need to use min/max here because some scans are done backwards, such that
@@ -81,7 +84,16 @@ def get_xvec_yfunc_from_scan(scanID, workdir='.'):
 
   return commonx, avgyfunc
 
-def plot_plane_using_scans(scanIDs, posvec, labels=None, medium_n=1.33, imagej_compat=False, with_tics=False, scale=1.0, **imshowkwargs):
+def plot_plane_using_scans(scanIDs, 
+                           posvec,
+                           labels=None,
+                           medium_n=1.33,
+                           imagej_compat=False,
+                           with_tics=False,
+                           scale=1.0,
+                           zstart=None,
+                           zend=None,
+                           **imshowkwargs):
   """
   Plots a nZ plane image using scans specified via scanIDs, where n is one of
   X or Y. The position of each scan is given by posvec, which is 1-1 matched
@@ -112,6 +124,13 @@ def plot_plane_using_scans(scanIDs, posvec, labels=None, medium_n=1.33, imagej_c
 
   Scale, defaults to 1.0. Image width and height is multiplied by this factor
   before plotting. Useful mostly when used with with_tics.
+
+  If zstart is given, then scans will be truncated if required such that they
+  begin at z=zstart. If the smallest z value is above. zstart nothing is done.
+
+  If zend is given, then scans will be truncated if required such they begin
+  end at z=zend. If the largest z value is below zend, nothing is done. Note
+  that due to medium_n scaling, the actual zend might not be what is specified.
 
   Any unknown kwargs are passed onto imshow.
 
@@ -147,6 +166,15 @@ def plot_plane_using_scans(scanIDs, posvec, labels=None, medium_n=1.33, imagej_c
     min_xend = min(min_xend, xvec[-1])
     min_xcount = min(min_xcount, len(xvec))
 
+  # respect zstart if it is given by adjusting max_xstart, keeping in mind
+  # that the xaxis of the PLOT is the z position
+  if zstart is not None:
+    max_xstart = zstart
+
+  # similarly respect zend if it is given
+  if zend is not None:
+    min_xend = zend
+
   commonx = np.linspace(max_xstart, min_xend, min_xcount)
 
   ymat = np.concatenate(list(yfunc(commonx) for yfunc in yfuncvec))
@@ -178,11 +206,16 @@ def plot_plane_using_scans(scanIDs, posvec, labels=None, medium_n=1.33, imagej_c
   height /= 25.4
 
   # use given imshow args if present
-  defimshowkwargs = {
-      'interpolation':'bilinear',
-      'cmap':'jet',
-      'aspect':'auto',
-      }
+  if imagej_compat:
+    defimshowkwargs = dict(cmap='gray',
+                           vmin=0,
+                           vmax=10,
+                           interpolation='none')
+  else:
+    defimshowkwargs = dict(cmap='jet',
+                           interpolation='bilinear')
+
+  # allow user specified imshowkwargs to override our defaults
   defimshowkwargs.update(imshowkwargs)
 
   if not with_tics:
@@ -205,7 +238,8 @@ def plot_plane_using_scans(scanIDs, posvec, labels=None, medium_n=1.33, imagej_c
 
     fig = plt.figure(figsize=(newwidth, newheight))
     ax = plt.Axes(fig, [xoffsetpc, yoffsetpc, widthpc, heightpc])
-    
+    ax.set_xlim([zstart, zend])
+
   fig.add_axes(ax)
 
   plt.imshow(ymat,
