@@ -18,7 +18,7 @@ from utils import keypress
 
 
 import itertools
-linestyles = ['-', '-o', '-d', '-s', '-*']
+linestyles = ['-x', '-o', '-d', '-s', '-*']
 linecolors = ['b', 'g', 'r', 'c', 'm', 'orange', 'k']
 linespecs = list(itertools.product(linestyles, linecolors))
 linespec_idx = 0
@@ -140,6 +140,7 @@ class Plot(object):
     xnew = xvec
     ynew = yvec
     if self.interp == True:
+      print 'Interpolation ON'
       # first down sample to smooth out the data
       interpf = interp1d(xvec, yvec, kind='cubic')
       xnew = NP.linspace(xvec.min(), xvec.max(), len(xvec)/2)
