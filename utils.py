@@ -3,12 +3,18 @@ import sys
 
 # on OS X we are not getting keypress events with the default backend, but we
 # do with tkinter
-plt.switch_backend('tkAgg')
-def keypress(event):
-  if event.key == 'q':
-    import sys
-    sys.exit(0)
+if sys.platform == 'darwin':
+  plt.switch_backend('tkAgg')
 
+def keypress(event):
+  """
+  Use this to enable pressing 'q' to quit matplotlib:
+
+    fig.canvas.mpl_connect('key_press_event', keypress)
+
+  """
+  if event.key == 'q':
+    plt.close()
 spinner_cnt = 0
 def do_spinner(text=''):
   global spinner_cnt
@@ -20,6 +26,28 @@ def do_spinner(text=''):
   sys.stdout.flush()
 
   spinner_cnt = (spinner_cnt+1)%11
+
+def add_title_legend(fig=plt.gcf(), nrows=1, xpos=0.5, ypos=1.1):
+  """
+  This adds a legend to where the title would be, using nrow number of rows.
+
+  Lines with get_visible() == False will not be considered
+  """
+  lines = list()
+  for ax in fig.get_axes():
+    lines += ax.get_lines()
+
+  oklines = filter(lambda x:x.get_visible(), lines)
+
+  labels = [l.get_label() for l in oklines]
+  ncol = max(1, int(len(lines)/nrows))
+
+  fig.get_axes()[0].legend(
+      oklines,
+      labels, 
+      loc='upper center',
+      bbox_to_anchor=(xpos, ypos),
+      ncol=ncol)
 
 def savefig(filename, formats=None, figure=None, silent=False, pixelsize_um=None):
   """
@@ -63,7 +91,7 @@ def savefig(filename, formats=None, figure=None, silent=False, pixelsize_um=None
       else:
         dpi = None
 
-      figure.savefig(fname, dpi=dpi)
+      figure.savefig(fname, dpi=dpi, bbox_inches='tight')
 
       if not silent:
         print 'Saved to', fname
