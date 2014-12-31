@@ -10,26 +10,7 @@ from scipy.interpolate import interp1d
 import numpy as np
 import matplotlib.pyplot as plt
 
-from csvtools import CSVReader
-
-def get_csvs_by_scanID(scanID, workdir='.', require_ext=True):
-  """
-  In the current directory, or workdir.
-
-  If require_ext is false, then files that do not end in .csv will also be
-  considered.
-  """
-  from os import listdir
-  entries = listdir(workdir)
-
-  from os.path import isfile
-  csvs = list()
-  for entry in entries:
-    if scanID in entry and isfile(entry):
-      if require_ext and entry.endswith('csv') or not require_ext:
-        csvs.append(entry)
-
-  return csvs
+from csvtools import CSVReader, get_csvs_by_scanID
 
 def get_xyvec_from_csv(csvfilename):
   print 'Loading', csvfilename
@@ -185,10 +166,8 @@ def plot_plane_using_scans(scanIDs,
   commonz = commonx
 
   # compute the width and height, accounting for medium refractive index
-  zstart = commonz.min()
-  zend = commonz.max()
-  zrange = zend - zstart
-  zend = zstart + zrange * medium_n
+  zstart = commonz.min()*medium_n
+  zend = commonz.max()*medium_n
 
   extent = [zstart, zend, min(posvec), max(posvec)]
 
