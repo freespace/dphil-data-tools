@@ -38,12 +38,14 @@ class Plot(object):
     super(Plot, self).__init__()
     self._kwargs= kwargs
 
-    # we can't use dict.get for these because the functions are evaluated
-    # before calling get, and they have side effects
-    self._fig = kwargs.get('fig')
+    self._fig = kwargs.get('fig', PLT.gcf())
     if self._fig is None:
-      self._fig = PLT.figure()
+      self._fig = PLT.gcf()
+      if self._fig is None:
+        self._fig = PLT.figure()
 
+    # don't use the default kwarg of get to add subplot because
+    # order of evaluation is not guaranteed and it has side effects
     self._ax = kwargs.get('ax')
     if self._ax is None:
       self._ax =self._fig.add_subplot(111)
@@ -63,6 +65,7 @@ class Plot(object):
 
     # whether we are plotting a single csv file
     self._single = len(self.csvfiles) == 1
+
 
   def __getattr__(self, attr):
     if attr in self._kwargs:
