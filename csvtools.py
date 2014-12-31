@@ -80,7 +80,7 @@ class CSVReader(object):
     import sys
     sys.stderr.write('!! Do not use this headers property of CSVReader !!\n')
 
-    return self.comments()
+    return self.comments
 
   @property
   def column_headers(self):
@@ -384,3 +384,23 @@ def get_averaged_data(csvfile, *args, **kwargs):
   Wrapper for CSVReader.get_averaged_data
   """
   return CSVReader(csvfile).get_averaged_data(*args, **kwargs)
+
+def get_csvs_by_scanID(scanID, workdir='.', require_ext=True):
+  """
+  In the current directory, or workdir.
+
+  If require_ext is false, then files that do not end in .csv will also be
+  considered.
+  """
+  from os import listdir
+  entries = listdir(workdir)
+
+  from os.path import isfile
+  csvs = list()
+  for entry in entries:
+    if scanID in entry and isfile(entry):
+      if require_ext and entry.endswith('csv') or not require_ext:
+        csvs.append(entry)
+
+  return csvs
+
