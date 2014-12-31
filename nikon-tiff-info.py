@@ -19,26 +19,41 @@ now because I don't need it. You can however find it in 65332.
 """
 import tiffany
 
+def _decode(listofbytes, nodropchars):
+  """
+  nodropchars: if True, then undecodable values are part of the returned
+  string, otherwise they are silently dropped
+  """
+  # strings appear to be stored as windows-1252 across 2 bytes
+  codes = [a+b*0x100 for a,b in zip(listofbytes[0::2], listofbytes[1::2])]
+  ret = str()
+  for b in codes:
+    try:
+      ret += chr(b).decode('windows-1252')
+    except:
+      if nodropchars:
+        ret += '&#x%x;'%(b)
+  return ret
+  
 def main(cmdargs):
   im = tiffany.open(cmdargs.tiff_file)
   infotag = 65330
   calibrationtag = 65326
+  extratag = 65331
 
   print 'Calibration (um):',im.im.ifd[calibrationtag][0]
 
+  def d(l):
+    return _decode(l, cmdargs.no_drop_chars)
+
   infolist = im.im.ifd[infotag]
+  infostr = d(infolist)
 
-  # info list seems to contain a 2 byte encoding with low byte first
-  infolist = [a+b*0x100 for a,b in zip(infolist[0::2], infolist[1::2])]
+  extralist = im.im.ifd[extratag]
+  extrastr = d(extralist)
 
-  # it looks like Nikon is using windows-1252
-  infostr = str()
-  for b in infolist:
-    try:
-      infostr += chr(b).decode('windows-1252')
-    except:
-      if cmdargs.no_drop_chars:
-        infostr += '&#%d;'%(b)
+  print extrastr
+  return
 
   # I have no idea how Nikon is encoding this stuff, but it looks like I can
   # split on the words TextInfoItem_ and get away with it
