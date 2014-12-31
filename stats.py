@@ -116,7 +116,7 @@ def stats(**kwargs):
   def f(key):
     return kwargs[key] or kwargs['all']
 
-  fieldwidth=16
+  fieldwidth=10
   lblwidth=16
 
   print csvfile
