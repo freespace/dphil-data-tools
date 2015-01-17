@@ -25,49 +25,53 @@ def _decode(listofbytes, nodropchars):
   string, otherwise they are silently dropped
   """
   # strings appear to be stored as windows-1252 across 2 bytes
-  codes = [a+b*0x100 for a,b in zip(listofbytes[0::2], listofbytes[1::2])]
+  listofbytes = map(int, listofbytes)
+  codes = [0xff&a|b<<8 for a,b in zip(listofbytes[0::2], listofbytes[1::2])]
   ret = str()
   for b in codes:
     try:
       ret += chr(b).decode('windows-1252')
     except:
       if nodropchars:
-        ret += '&#x%x;'%(b)
+        ret += '&#x%04x;'%(0xffff&b)
   return ret
   
 def main(cmdargs):
   im = tiffany.open(cmdargs.tiff_file)
   infotag = 65330
   calibrationtag = 65326
-  extratag = 65331
-
-  print 'Calibration (um):',im.im.ifd[calibrationtag][0]
 
   def d(l):
     return _decode(l, cmdargs.no_drop_chars)
 
-  infolist = im.im.ifd[infotag]
-  infostr = d(infolist)
+  if cmdargs.dump_tags:
+    if im.im.ifd.get(calibrationtag) is None:
+      for tag in im.im.ifd.keys():
+        print '===== ' + str(tag) + ' ====='
+        print d(im.im.ifd[tag])
+        print ''
+  else:
+    print 'Calibration (um):',im.im.ifd.get(calibrationtag, ['Not Available'])[0]
 
-  extralist = im.im.ifd[extratag]
-  extrastr = d(extralist)
+    if cmdargs.info:
+      infolist = im.im.ifd[infotag]
+      infostr = d(infolist)
 
-  print extrastr
-  return
+      # I have no idea how Nikon is encoding this stuff, but it looks like I can
+      # split on the words TextInfoItem_ and get away with it
+      infovec = infostr.split('TextInfoItem_')
 
-  # I have no idea how Nikon is encoding this stuff, but it looks like I can
-  # split on the words TextInfoItem_ and get away with it
-  infovec = infostr.split('TextInfoItem_')
-
-  for idx, info in enumerate(infovec):
-    prefix = str(idx+1)
-    print 'Info %d: %s'%(idx+1, info[len(prefix):])
+      for idx, info in enumerate(infovec):
+        prefix = str(idx+1)
+        print 'Info %d: %s'%(idx+1, info[len(prefix):])
 
 if __name__ == '__main__':
   import argparse
   parser = argparse.ArgumentParser(description='Program to readout text metadata from Nikon NIS tiffs')
 
   parser.add_argument('-no-drop-chars', action='store_true', help='If given, characters which cannot be decoded will be printed')
+  parser.add_argument('-info', action='store_true', help='If given, text information metadata will also be printed')
+  parser.add_argument('-dump_tags', action='store_true', help='If given, prints all available tags. Nullifies -extras.')
   parser.add_argument('tiff_file', type=str, help='tiff file to parse')
 
   cmdargs = parser.parse_args()
