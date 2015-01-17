@@ -37,33 +37,35 @@ def _decode(listofbytes, nodropchars):
   return ret
   
 def main(cmdargs):
-  im = tiffany.open(cmdargs.tiff_file)
-  infotag = 65330
-  calibrationtag = 65326
+  for tifffile in cmdargs.tiff_files:
+    print tifffile+':',
+    im = tiffany.open(tifffile)
+    infotag = 65330
+    calibrationtag = 65326
 
-  def d(l):
-    return _decode(l, cmdargs.no_drop_chars)
+    def d(l):
+      return _decode(l, cmdargs.no_drop_chars)
 
-  if cmdargs.dump_tags:
-    if im.im.ifd.get(calibrationtag) is None:
-      for tag in im.im.ifd.keys():
-        print '===== ' + str(tag) + ' ====='
-        print d(im.im.ifd[tag])
-        print ''
-  else:
-    print 'Calibration (um):',im.im.ifd.get(calibrationtag, ['Not Available'])[0]
+    if cmdargs.dump_tags:
+      if im.im.ifd.get(calibrationtag) is None:
+        for tag in im.im.ifd.keys():
+          print '===== ' + str(tag) + ' ====='
+          print d(im.im.ifd[tag])
+          print ''
+    else:
+      print 'Pixel size (um):',im.im.ifd.get(calibrationtag, ['Not Available'])[0]
 
-    if cmdargs.info:
-      infolist = im.im.ifd[infotag]
-      infostr = d(infolist)
+      if cmdargs.info:
+        infolist = im.im.ifd[infotag]
+        infostr = d(infolist)
 
-      # I have no idea how Nikon is encoding this stuff, but it looks like I can
-      # split on the words TextInfoItem_ and get away with it
-      infovec = infostr.split('TextInfoItem_')
+        # I have no idea how Nikon is encoding this stuff, but it looks like I can
+        # split on the words TextInfoItem_ and get away with it
+        infovec = infostr.split('TextInfoItem_')
 
-      for idx, info in enumerate(infovec):
-        prefix = str(idx+1)
-        print 'Info %d: %s'%(idx+1, info[len(prefix):])
+        for idx, info in enumerate(infovec):
+          prefix = str(idx+1)
+          print '\tInfo %d: %s'%(idx+1, info[len(prefix):])
 
 if __name__ == '__main__':
   import argparse
@@ -72,7 +74,7 @@ if __name__ == '__main__':
   parser.add_argument('-no-drop-chars', action='store_true', help='If given, characters which cannot be decoded will be printed')
   parser.add_argument('-info', action='store_true', help='If given, text information metadata will also be printed')
   parser.add_argument('-dump_tags', action='store_true', help='If given, prints all available tags. Nullifies -extras.')
-  parser.add_argument('tiff_file', type=str, help='tiff file to parse')
+  parser.add_argument('tiff_files', nargs='+', help='tiff files to parse')
 
   cmdargs = parser.parse_args()
   main(cmdargs)
