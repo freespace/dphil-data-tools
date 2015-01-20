@@ -65,7 +65,7 @@ def get_xvec_yfunc_from_scan(scanID, workdir='.'):
 
   return commonx, avgyfunc
 
-def plot_plane_using_scans(scanIDs, 
+def plot_plane_using_scans(scanIDs,
                            posvec,
                            labels=None,
                            medium_n=1.33,
@@ -74,6 +74,7 @@ def plot_plane_using_scans(scanIDs,
                            scale=1.0,
                            zstart=None,
                            zend=None,
+                           um_units=False,
                            **imshowkwargs):
   """
   Plots a nZ plane image using scans specified via scanIDs, where n is one of
@@ -112,6 +113,9 @@ def plot_plane_using_scans(scanIDs,
   If zend is given, then scans will be truncated if required such they begin
   end at z=zend. If the largest z value is below zend, nothing is done. Note
   that due to medium_n scaling, the actual zend might not be what is specified.
+
+  If um_units is True, then all positions are assumed to be in um. Otherwise
+  they are assumed to be in mm, which is the default.
 
   Any unknown kwargs are passed onto imshow.
 
@@ -169,15 +173,18 @@ def plot_plane_using_scans(scanIDs,
   zstart = commonz.min()*medium_n
   zend = commonz.max()*medium_n
 
-  extent = [zstart, zend, min(posvec), max(posvec)]
+  extent = np.array([zstart, zend, min(posvec), max(posvec)])
 
   # apply scaling, but backup the original first since these define
   # the actual physical extent of the image
-  actualextent = extent
-  extent = map(lambda x:x*scale, extent)
+  actualextent = np.array(extent)
+  extent *= scale
 
-  # these are in mm
-  width= extent[1] - extent[0]
+  if um_units:
+    extent /= 1000
+
+  # width and height as expected to be in mm
+  width = extent[1] - extent[0]
   height = extent[3] - extent[2]
 
   # convert to inches
@@ -217,7 +224,7 @@ def plot_plane_using_scans(scanIDs,
 
     fig = plt.figure(figsize=(newwidth, newheight))
     ax = plt.Axes(fig, [xoffsetpc, yoffsetpc, widthpc, heightpc])
-    ax.set_xlim([zstart, zend])
+    ax.set_xlim(actualextent[:2])
 
   fig.add_axes(ax)
 
