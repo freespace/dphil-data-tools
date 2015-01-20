@@ -10,7 +10,6 @@ or may not be useful to a general user.
 from os.path import basename, splitext
 
 import numpy as NP
-from scipy.interpolate import interp1d
 import matplotlib.pyplot as PLT
 
 import csvtools as CSV
@@ -136,11 +135,39 @@ class Plot(object):
     tstart -= self._tstart0
     return 't=%.1f s'%(tstart)
 
-  def _plot_traces(self, lbl, xvec, yvec):
+  def _plot_traces(self, lbl, xvec, yvec, tvec):
+    if self.lowpass is not None:
+      print 'Low pass filtering with cutoff at %.2f Hz'%(self.lowpass)
+      
+      from lowpass import lowpassfilter
+      
+      # For now, we will assume that sample spacing is constant in time as
+      # well as in space. This isn't true, but SIOS doesn't have the ability
+      # right now to log the time between samples.
+      #
+      # However in future if we do have sampling time for each sample, we will
+      # want to use it, so put in a warning if we detect we have unique sample
+      # times for each sample
+      if len(NP.unique(tvec)) == len(tvec):
+        print '!! WARNING !! Sampling times available but being ignored'
+
+      dt = NP.abs(tvec[0] - tvec[-1])
+      nsamples = len(yvec)
+      sampling_rate = nsamples / dt
+
+      print '%d samples over %.2f seconds = %.2f Hz sampling rate'%(nsamples, dt, sampling_rate)
+
+      filteredyvec = lowpassfilter(yvec, sampling_rate, self.lowpass)
+
+      yvec = filteredyvec
+
     xnew = xvec
     ynew = yvec
+
     if self.interp == True:
       print 'Interpolation ON'
+
+      from scipy.interpolate import interp1d
       # first down sample to smooth out the data
       interpf = interp1d(xvec, yvec, kind='cubic')
       xnew = NP.linspace(xvec.min(), xvec.max(), len(xvec)/2)
@@ -213,6 +240,11 @@ class Plot(object):
       xvec = csv.mat[:,0]
       yvec = csv.mat[:,1]
 
+      if csv.csv_source == 'SIOS':
+        tvec = csv.mat[:,3]
+      else:
+        tvec = None
+
       if self._kwargs.get('sub_x0', False):
         xvec -= xvec[0]
         
@@ -226,7 +258,7 @@ class Plot(object):
         yvec -= yvec.min()
         yvec /= yrange
 
-      self._plot_traces(lbl, xvec, yvec)
+      self._plot_traces(lbl, xvec, yvec, tvec)
 
       if self.normalise:
         ax.hlines(0.5, xvec.min(), xvec.max(), linestyles='dotted', colors=['gray'])
@@ -336,6 +368,7 @@ def get_commandline_parser():
   parser.add_argument('-figsize', type=float, nargs=2, default=None, help='If given, the figure size will be set as given, in inches')
 
   parser.add_argument('-interp', action='store_true', default=False, help='If given, each series will be interpolated using a cubic')
+  parser.add_argument('-lowpass', type=float, default=None, help='If given, each series will be low pass filtered, with the cutoff as specified in Hz. When used wit interp, low pass filtering occurs first')
 
   parser.add_argument('-plotfile', type=str, default=None, help='A file containing the filenames of csvs to plot, along with optional title and comments')
 
