@@ -116,7 +116,7 @@ def stats(**kwargs):
   def f(key):
     return kwargs[key] or kwargs['all']
 
-  fieldwidth=10
+  fieldwidth=12
   lblwidth=16
 
   print csvfile
@@ -129,7 +129,8 @@ def stats(**kwargs):
   print ' '*lblwidth,'-'*(len(colheaders)*(fieldwidth+2)-1)
 
   def p(yvec):
-    fmt = '%%-%dg'%(fieldwidth)
+    #fmt = '%%-%dG'%(fieldwidth)
+    fmt = '%%-%dG'%(fieldwidth)
     s = get_stats(xvec, yvec)
     for x in s:
       if x is None:
