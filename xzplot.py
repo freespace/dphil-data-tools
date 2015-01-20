@@ -4,7 +4,7 @@ This file is a wrapper for plot_plane_using_scans.
 import matplotlib.pyplot as plt
 from plot2d import plot_plane_using_scans
 
-def plot_xz_plane_using_scans(scanIDs, xposvec, flip_x=False, noarrow=False, um_units=False, **imshowkwargs):
+def plot_xz_plane_using_scans(scanIDs, xposvec, flip_x=False, noarrow=False, um_units=False, neg_flow=False, **imshowkwargs):
   """
   Plots XZ plane image using scans specified via scanIDs. The x position of
   each scan is given by xposvec, which is 1-1 matched to scanIDs.
@@ -17,6 +17,9 @@ def plot_xz_plane_using_scans(scanIDs, xposvec, flip_x=False, noarrow=False, um_
 
   If um_units is True, then positions are assumed to be specified in um.
   Otherwise they are assumed to be in mm, which is the default.
+
+  If neg_flow is True, then flow is in the direction of negative x, otherwise
+  flow is in positive x, which is the default.
 
   Any unknown kwargs are passed onto imshow.
   """
@@ -47,7 +50,13 @@ def plot_xz_plane_using_scans(scanIDs, xposvec, flip_x=False, noarrow=False, um_
                       ha='right',
                       size=10)
 
+
   ax.text(1, 0.1, 'Ultrasound', **commonkwargs)
-  ax.text(1, 0.2, 'Flow', rotation=-90, **commonkwargs)
+
+  flow_rot = -90
+  if neg_flow:
+    flow_rot += 180
+
+  ax.text(1, 0.2, 'Flow', rotation=flow_rot, **commonkwargs)
 
   return ret
