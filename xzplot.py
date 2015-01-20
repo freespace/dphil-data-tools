@@ -4,7 +4,7 @@ This file is a wrapper for plot_plane_using_scans.
 import matplotlib.pyplot as plt
 from plot2d import plot_plane_using_scans
 
-def plot_xz_plane_using_scans(scanIDs, xposvec, flip_x=False, noarrow=False, **imshowkwargs):
+def plot_xz_plane_using_scans(scanIDs, xposvec, flip_x=False, noarrow=False, um_units=False, **imshowkwargs):
   """
   Plots XZ plane image using scans specified via scanIDs. The x position of
   each scan is given by xposvec, which is 1-1 matched to scanIDs.
@@ -15,6 +15,9 @@ def plot_xz_plane_using_scans(scanIDs, xposvec, flip_x=False, noarrow=False, **i
 
   If noarrows is True, then arrows indicating ultrasound and flow direction are omitted.
 
+  If um_units is True, then positions are assumed to be specified in um.
+  Otherwise they are assumed to be in mm, which is the default.
+
   Any unknown kwargs are passed onto imshow.
   """
 
@@ -22,10 +25,15 @@ def plot_xz_plane_using_scans(scanIDs, xposvec, flip_x=False, noarrow=False, **i
     scanIDs = scanIDs[::-1]
     xposvec = xposvec[::-1]
 
-  labels = ('Z position (mm)', 'X position (mm)')
+  if um_units:
+    labels = ('Z position (um)', 'X position (um)')
+  else:
+    labels = ('Z position (mm)', 'X position (mm)')
+
   ret = plot_plane_using_scans(scanIDs,
                                xposvec,
                                labels=labels,
+                               um_units=um_units,
                                **imshowkwargs)
 
   ax = plt.gca()
