@@ -12,19 +12,35 @@ import matplotlib.pyplot as plt
 
 from csvtools import CSVReader, get_csvs_by_scanID
 
-def get_xyvec_from_csv(csvfilename):
+def get_xyvec_from_csv(csvfilename, lowpass=None):
   print 'Loading', csvfilename
   mat = CSVReader(csvfilename).mat
   xvec = mat[:,0]
   yvec = mat[:,1]
 
+  if lowpass is not None:
+    print '    Low pass filtering with cutoff at %.2f Hz'%(lowpass)
+    from lowpass import lowpassfilter
+    tvec = mat[:,3]
+
+    dt = np.abs(tvec[0] - tvec[-1])
+    nsamples = len(yvec)
+    sampling_rate = nsamples / dt
+
+    print '    %d samples in %.2f seconds = %.2f Hz sampling rate'%(nsamples, dt, sampling_rate)
+
+    filteredyvec = lowpassfilter(yvec, sampling_rate, lowpass)
+    yvec = filteredyvec
+
   return xvec, yvec
 
-def get_xvec_yfunc_from_scan(scanID, workdir='.'):
+def get_xvec_yfunc_from_scan(scanID, workdir='.', lowpass=None):
   """
   Loads all data from the specified scan, and returns an xvec that is common
   to all csvs, and a function that returns the average interpolated y value
   for any value within xvec.
+
+  If lowpass is given each scan will be lowpass filtered before being averaged.
 
   All data is first resampled to the same x-axis grid, then averaged.
   """
@@ -37,7 +53,7 @@ def get_xvec_yfunc_from_scan(scanID, workdir='.'):
   min_xcount = 2**32
 
   for csv in csvfiles:
-    xvec, yvec = get_xyvec_from_csv(csv)
+    xvec, yvec = get_xyvec_from_csv(csv, lowpass=lowpass)
 
     # this assumes yvec[0] and yvec[-1] is background
     background = (yvec[0] + yvec[-1])/2
@@ -75,6 +91,7 @@ def plot_plane_using_scans(scanIDs,
                            zstart=None,
                            zend=None,
                            um_units=False,
+                           lowpass=None,
                            **imshowkwargs):
   """
   Plots a nZ plane image using scans specified via scanIDs, where n is one of
@@ -117,6 +134,9 @@ def plot_plane_using_scans(scanIDs,
   If um_units is True, then all positions are assumed to be in um. Otherwise
   they are assumed to be in mm, which is the default.
 
+  if lowpass is True, then all scans will be passed through a low pass filter
+  with the specified cutoff before interplolation and plotting.
+
   Any unknown kwargs are passed onto imshow.
 
   Returned are:
@@ -145,7 +165,7 @@ def plot_plane_using_scans(scanIDs,
 
   yfuncvec = list()
   for scanID in scanIDs:
-    xvec, yfunc = get_xvec_yfunc_from_scan(scanID)
+    xvec, yfunc = get_xvec_yfunc_from_scan(scanID, lowpass=lowpass)
     yfuncvec.append(yfunc)
     max_xstart = max(max_xstart, xvec[0])
     min_xend = min(min_xend, xvec[-1])
