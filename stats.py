@@ -134,7 +134,7 @@ def stats(**kwargs):
     s = get_stats(xvec, yvec)
     for x in s:
       if x is None:
-        x = -1
+        x = -1234
       print fmt%(x)+'|',
 
   ycnt = 1
