@@ -118,8 +118,25 @@ class CSVReader(object):
         lines = [line for line in fh if not line.startswith('#')]
         return numpy.loadtxt(lines, delimiter=',', skiprows=1)
 
-    def _load_LECROYWR62Xi():
-      self._csv_source = 'LECROYWR62Xi'
+    def _load_LECROYWR104Xi():
+      self._csv_source = 'LECROYWR104Xi'
+      with open(self._csvfile) as fh:
+        lines = fh.readlines()
+        # keep reading until we find a line starting with ,
+        while not lines[0].startswith(','):
+          lines.pop(0)
+
+        # consume the line starts with ,
+        lines.pop(0)
+
+        # there will be one more line saying "Horizontal Offset..."
+        while not lines[0].startswith(','):
+          lines.pop(0)
+
+        return numpy.genfromtxt(lines, delimiter=',', usecols=(3,4))
+
+    def _load_LECROYWS434():
+      self._csv_source = 'LECROYWS434'
       with open(self._csvfile) as fh:
         lines = fh.readlines()
         # look for the first line containing a # which indicates
@@ -131,7 +148,7 @@ class CSVReader(object):
 
     # lazy load mat, b/c sometimes we just want the header
     if self._mat is None:
-      loaders = (_load, _load_SIOS, _load_LECROYWR62Xi)
+      loaders = (_load, _load_SIOS, _load_LECROYWR104Xi, _load_LECROYWS434)
       mat = None
       exdict = dict()
       for loader in loaders:
