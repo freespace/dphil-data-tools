@@ -7,7 +7,7 @@ Since this script is intended for mywork there are certain presets which may
 or may not be useful to a general user.
 """
 
-from os.path import basename, splitext
+from os.path import basename, splitext, abspath
 
 import numpy as NP
 import matplotlib.pyplot as PLT
@@ -17,7 +17,7 @@ from utils import keypress
 
 
 import itertools
-linestyles = ['-x', '-o', '-d', '-s', '-*']
+linestyles = ['-', '-o', '-d', '-s', '-*', '-x']
 linecolors = ['b', 'g', 'r', 'c', 'm', 'orange', 'k']
 linespecs = list(itertools.product(linestyles, linecolors))
 linespec_idx = 0
@@ -94,6 +94,8 @@ class Plot(object):
       else:
         endfile = splitext(basename(csvfiles[-1]))[0]
         filename = startfile+'__'+endfile+suffix
+    else:
+      filename += suffix
 
     return filename
 
@@ -136,6 +138,24 @@ class Plot(object):
     return 't=%.1f s'%(tstart)
 
   def _plot_traces(self, lbl, xvec, yvec, tvec):
+    if self.negoverflow:
+      print 'Fixing negative overflow assuming +/-10V range'
+      # b/c of exposure control, the accumulated reading value can exceed
+      # positive limit of the signed 16bit value that stores readings on
+      # the ADC.  However because we only have VOLTAGES, we cannot simply
+      # cast to unsigned to fix the issue.
+      #
+      # Instead we have to do our own wrapping, where -9V is really 11V that
+      # overflowed. The easiest way to do this is to add to 20 the negative
+      # value, which is intutitively the same thing.
+
+      def f(v):
+        if v < 0:
+          v = 20 + v
+        return v
+      posyvec = [f(v) for v in yvec]
+      yvec = posyvec
+
     if self.lowpass is not None:
       print 'Low pass filtering with cutoff at %.2f Hz'%(self.lowpass)
       
@@ -185,13 +205,15 @@ class Plot(object):
       l = lbl
 
     ls, lc = _next_linespec()
+    if self.linestyle:
+      ls = self.linestyle
+
     self._ax.plot(xnew, ynew, ls, color=lc, label=l, **self.plotkwargs)
 
   def plot(self):
     csvfiles = self.csvfiles
     title = self.title
     comment_title = self.comment_title
-    no_debug = self.no_debug
 
     fig = self._fig
     ax = self._ax
@@ -225,7 +247,7 @@ class Plot(object):
       print 'Plotting',csvfile
       csv = CSV.CSVReader(csvfile)
 
-      headers += ['# File: '+basename(csvfile)]
+      headers += ['# File: '+abspath(csvfile)]
       if self._single:
         headers.extend(csv.comments)
 
@@ -267,10 +289,14 @@ class Plot(object):
       ax.set_yscale('log')
 
     def _xylabel_by_source():
-      if csv.csv_source == 'SIOS':
-        return 'Z Position (mm)', 'Fluoresence (V)'
-      else:
-        return 'X LABEL', 'Y LABEL'
+      source = csv.csv_source
+      ret = 'X LABEL', 'Y LABEL'
+      if source is not None:
+        if source == 'SIOS':
+          ret = 'Z Position (mm)', 'Fluoresence (V)'
+        elif source.startswith('LECROY'):
+          ret = 'Time (seconds)', 'Y LABEL (V)'
+      return ret
 
     xlabel, ylabel = _xylabel_by_source()
     if self.xlabel is not None:
@@ -309,15 +335,25 @@ class Plot(object):
     if self.vgrid or self.grid:
       xaxis.grid()
 
-    # plot headers
-    if not no_debug:
-      ax.text(
-          0, 1.0,
-          '\n'.join(headers),
-          color='0.75',
-          zorder=-1,
-          verticalalignment='top',
-          **self.textkwargs)
+    texttoplot = ['']
+    if self.comments is not None:
+      texttoplot.extend(map(lambda x: '# '+x, self.comments))
+
+    if self.negoverflow:
+      texttoplot.append('# Negative overflows fixed')
+    if self.lowpass is not None:
+      texttoplot.append('# '+'Lowpass filtered at %.2f Hz'%(self.lowpass))
+
+    if not self.no_debug:
+      texttoplot.extend(headers)
+
+    ax.text(
+        0, 1.0,
+        '\n'.join(texttoplot),
+        color='0.75',
+        zorder=-1,
+        verticalalignment='top',
+        **self.textkwargs)
 
     # resize the plot if figsize is given
     if self.figsize is not None:
@@ -335,6 +371,8 @@ def get_commandline_parser():
 
   parser.add_argument('-title', default='', help='Plot title')
   parser.add_argument('-comment_title', action='store_true', help='If given, the comment of the first csv file will be used as plot title. This is ignored if title is given.')
+
+  parser.add_argument('-linestyle', default=None, help='If given, the plot will be rendered using the given matplotlib linestyle')
 
   parser.add_argument('-show_start_time', action='store_true', help='If given, the time of the first csv file will be shown as a label in the top-right.')
   parser.add_argument('-t0', type=float, default=None, help='Value to use as t=0 when displaying time points on the x-axis.')
@@ -369,6 +407,7 @@ def get_commandline_parser():
 
   parser.add_argument('-interp', action='store_true', default=False, help='If given, each series will be interpolated using a cubic')
   parser.add_argument('-lowpass', type=float, default=None, help='If given, each series will be low pass filtered, with the cutoff as specified in Hz. When used wit interp, low pass filtering occurs first')
+  parser.add_argument('-negoverflow', action='store_true', default=False, help='If given negative values will be assumed to be overflows from +10, and will be fixed accordingly. This occurs before filtering and interpolation')
 
   parser.add_argument('-plotfile', type=str, default=None, help='A file containing the filenames of csvs to plot, along with optional title and comments')
 
@@ -378,6 +417,7 @@ def get_commandline_parser():
   parser.add_argument('-start_offset', type=int, nargs=1, default=[0], help='When given, the first start_offset number of files are ignored. This is applied before skip is applied')
   parser.add_argument('-include_first_last', action='store_true', default=False, help='If given, the first and last csv given is always plotted, regardless of skip, max_traces, or start_offset')
 
+  parser.add_argument('-comments', type=str, nargs='+', default=None, help='If given, will be displayed in top left of plot in background. Not affected by -no_debug')
   parser.add_argument('csvfiles', nargs='+', help='CSV files to plot')
 
   return parser
