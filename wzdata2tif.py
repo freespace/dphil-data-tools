@@ -31,13 +31,13 @@ matplotlib.use('Qt4Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 
-def main(**kwargs):
-  noadjust = kwargs['noadjust']
-  datafile = kwargs['datafile']
+def convert(datafile, noadjust):
   npzfile = np.load(datafile)
   scandata = npzfile['scandata'].item()
 
-  pix = scandata.matrix
+  if scandata.w is None:
+    print datafile + ' does not define w axis, not processing.'
+    return None
 
   zvec = scandata.zpositionvec
   # correct for the fact these scans are taken in water, where the focus
@@ -58,6 +58,7 @@ def main(**kwargs):
   # pix is in volts (0..20) and we want to convert it to uint16 as follows:
   # n = (2**16-1)*v/20
   # Where n is the integer result, v is the voltage we have stored.
+  pix = scandata.matrix
 
   intpix = (2**16-1)*pix/20
   intpix = intpix.astype(np.uint16)
@@ -103,6 +104,8 @@ def main(**kwargs):
                   pixelheight=pw,
                   instrument='SIOS',
                   original=datafile,
+                  wrange=wrange,
+                  zrange=zrange,
                   adjusted=not noadjust)
   from os.path import splitext, extsep
   name,ext = splitext(datafile)
@@ -113,10 +116,20 @@ def main(**kwargs):
     from json import dumps
     return dumps(obj, sort_keys=True, indent=2, separators=(',', ': '))
 
-  imsave(outfile, np.asarray(im), description=tojson(metadata))
+  imsave(outfile,
+         np.asarray(im),
+         description=tojson(metadata),
+         resolution=(25.4*1000/pw, 25.4*1000/ph))
 
   print ''
   print 'TIFF written to', outfile
+
+def main(**kwargs):
+  noadjust = kwargs['noadjust']
+  datafiles = kwargs['datafiles']
+
+  for datafile in datafiles:
+    convert(datafile, noadjust)
 
 def parse_commandline_arguments():
   parser = get_commandline_parser()
@@ -125,12 +138,12 @@ def parse_commandline_arguments():
 
 def get_commandline_parser():
   import argparse
-  parser = argparse.ArgumentParser(description='GNUplot replacement plotter')
+  parser = argparse.ArgumentParser(description='Converts 2D SIOS scans to TIFF images')
 
   parser.add_argument('-noadjust',
                       action='store_true',
                       help='No adjustments are made to the image after converting from matrix.')
-  parser.add_argument('datafile', help='YZ data file')
+  parser.add_argument('datafiles', nargs='+', help='WZ data files')
 
   return parser
 
