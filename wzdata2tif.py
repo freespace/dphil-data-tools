@@ -102,7 +102,8 @@ def main(**kwargs):
                   pixelwidth=pw,
                   pixelheight=pw,
                   instrument='SIOS',
-                  original=datafile)
+                  original=datafile,
+                  adjusted=not noadjust)
   from os.path import splitext, extsep
   name,ext = splitext(datafile)
   outfile = name + extsep + 'tif'
