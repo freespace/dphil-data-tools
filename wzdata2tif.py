@@ -52,8 +52,8 @@ def main(**kwargs):
   wrange = wvec.max() - wvec.min()
   zrange = zvec.max() - zvec.min()
 
-  pw = zrange/(len(zvec)-1)
-  ph = wrange/(len(wvec)-1)
+  pw = zrange/(len(zvec))
+  ph = wrange/(len(wvec))
 
   # pix is in volts (0..20) and we want to convert it to uint16 as follows:
   # n = (2**16-1)*v/20
@@ -81,12 +81,12 @@ def main(**kwargs):
       # the image constant to reduce the pixel height
       newsize = (w, h*ph/pw)
       ph /= ph/pw
-  
+
     if newsize is not None:
       adjusted = True
       im = im.resize(map(int,newsize), Image.NEAREST)
 
-  print 'Image width=%.2f um, height=%.2f um'%(zrange+pw, wrange)
+  print 'Image width=%.2f um, height=%.2f um'%(zrange, wrange)
   print '  pixel width=%.2f um, height=%.2f um, adjusted=%s'%(pw, ph, not noadjust)
   if noadjust:
     print '  pixel aspect ratio=%.2f (h:w=%.2f)'%(pw/ph, ph/pw)
@@ -95,10 +95,25 @@ def main(**kwargs):
     print '  YZ scan detected, inverting image vertically'
     im = im.transpose(Image.FLIP_TOP_BOTTOM)
 
+  # construct some metadata to save with the image
+  metadata = dict(width=zrange,
+                  height=wrange,
+                  w=scandata.w,
+                  pixelwidth=pw,
+                  pixelheight=pw,
+                  instrument='SIOS',
+                  original=datafile)
   from os.path import splitext, extsep
   name,ext = splitext(datafile)
   outfile = name + extsep + 'tif'
-  im.save(outfile)
+
+  from tifffile import imsave
+  def tojson(obj):
+    from json import dumps
+    return dumps(obj, sort_keys=True, indent=2, separators=(',', ': '))
+
+  imsave(outfile, np.asarray(im), description=tojson(metadata))
+
   print ''
   print 'TIFF written to', outfile
 
@@ -111,7 +126,7 @@ def get_commandline_parser():
   import argparse
   parser = argparse.ArgumentParser(description='GNUplot replacement plotter')
 
-  parser.add_argument('-noadjust', 
+  parser.add_argument('-noadjust',
                       action='store_true',
                       help='No adjustments are made to the image after converting from matrix.')
   parser.add_argument('datafile', help='YZ data file')
