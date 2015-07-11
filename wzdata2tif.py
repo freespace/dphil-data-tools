@@ -100,6 +100,9 @@ def convert(datafile, noadjust):
   zlim = (zvec[0], zvec[-1])
   wlim = (wvec[0], wvec[-1])
 
+  from time import ctime
+  tstart = scandata.zscandatavec[0][1].starttime
+  tend = scandata.zscandatavec[-1][1].endtime
   metadata = dict(width=zrange,
                   height=wrange,
                   w=scandata.w,
@@ -109,7 +112,11 @@ def convert(datafile, noadjust):
                   original=datafile,
                   zlim=zlim,
                   wlim=wlim,
-                  adjusted=not noadjust)
+                  starttime=ctime(tstart),
+                  endtime=ctime(tend),
+                  adjusted=not noadjust,
+                  comments=scandata.comments)
+
   from os.path import splitext, extsep
   name,ext = splitext(datafile)
   outfile = name + extsep + 'tif'
