@@ -97,6 +97,9 @@ def convert(datafile, noadjust):
     im = im.transpose(Image.FLIP_TOP_BOTTOM)
 
   # construct some metadata to save with the image
+  zlim = (zvec[0], zvec[-1])
+  wlim = (wvec[0], wvec[-1])
+
   metadata = dict(width=zrange,
                   height=wrange,
                   w=scandata.w,
@@ -104,8 +107,8 @@ def convert(datafile, noadjust):
                   pixelheight=pw,
                   instrument='SIOS',
                   original=datafile,
-                  wrange=wrange,
-                  zrange=zrange,
+                  zlim=zlim,
+                  wlim=wlim,
                   adjusted=not noadjust)
   from os.path import splitext, extsep
   name,ext = splitext(datafile)
@@ -119,7 +122,10 @@ def convert(datafile, noadjust):
   imsave(outfile,
          np.asarray(im),
          description=tojson(metadata),
-         resolution=(25.4*1000/pw, 25.4*1000/ph))
+         resolution=(10*1000/pw, 10*1000/ph),
+         # 296 is the resolution_unit tag. This sets the resolution unit to cm
+         # (3) from the default of inch (2)
+         extratags=[(296, 'H', 1, 3)])
 
   print ''
   print 'TIFF written to', outfile
