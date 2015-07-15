@@ -7,8 +7,10 @@ The script performs certain adjustments to make the output compatible with fluor
 
   - The Z axis is scaled by 1.33 to account for refractive index of water and
     the resulting magnification of motion in air.
-  - The image is made square by scaling the image in width or height as
-    needed. This transformation preserved the smaller of pixel height or width before scaling
+  - The image is made square by scaling the image vertically so pixel height
+    matches pixel width. We do not scale by width because scans in Z tend to be
+    fixed while scans in X/Y are not. Preserving the width allows for easier
+    comparisons.
   - If the image is an YZ image, the image is inverted vertically to place the
     origin at bottom-left as expected.
 
@@ -52,6 +54,8 @@ def convert(datafile, noadjust):
   wrange = wvec.max() - wvec.min()
   zrange = zvec.max() - zvec.min()
 
+  # assumption is that all z scans are done using the same z stepping
+  # The 1.33 is again the refractive index correction factor
   pw = zrange/(len(zvec))
   ph = wrange/(len(wvec))
 
@@ -70,16 +74,9 @@ def convert(datafile, noadjust):
 
   if not noadjust:
     newsize = None
-    if pw > ph:
-      # pixel width is larger than pixel height, we need to make the image
-      # have more pixels in X axis to reduce the pixel width when holding
-      # the physical size of the image constant
-      newsize = (w * pw/ph, h)
-      pw /= pw/ph
-    elif ph > pw:
-      # similarly when pixels are taller than they are wide, we need to add
-      # more pixels in the Y direction while holding the physical size of
-      # the image constant to reduce the pixel height
+    if int(ph*100) != int(pw*100):
+      # make pixels square. This means scaling the image in height until
+      # ph matches pw.
       newsize = (w, h*ph/pw)
       ph /= ph/pw
 
