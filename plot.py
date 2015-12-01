@@ -158,9 +158,9 @@ class Plot(object):
 
     if self.lowpass is not None:
       print 'Low pass filtering with cutoff at %.2f Hz'%(self.lowpass)
-      
+
       from lowpass import lowpassfilter
-      
+
       # For now, we will assume that sample spacing is constant in time as
       # well as in space. This isn't true, but SIOS doesn't have the ability
       # right now to log the time between samples.
@@ -269,7 +269,7 @@ class Plot(object):
 
       if self._kwargs.get('sub_x0', False):
         xvec -= xvec[0]
-        
+
       xvec *= self.xmultiplier
 
       if self._kwargs.get('sub_y0', False):
