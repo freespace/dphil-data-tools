@@ -107,11 +107,17 @@ if __name__ == '__main__':
   for inputfile in cmdargs['inputfiles']:
     p('Loading %s'%(inputfile))
 
-    reader = CSVReader(inputfile)
-    mat = reader.mat
-
-    tvec = mat[:,0]
-    xvec = mat[:,1]
+    if inputfile.endswith('csv'):
+      p('  CSV')
+      reader = CSVReader(inputfile)
+      mat = reader.mat
+      tvec = mat[:,0]
+      xvec = mat[:,1]
+    elif inputfile.endswith('trc'):
+      p('  Lecroy')
+      from lecroy import read_timetrace
+      tvec, xvec = read_timetrace(inputfile)
+      print tvec.shape, xvec.shape
 
     nsamples = len(tvec)
 
