@@ -15,6 +15,7 @@ Brief Descriptions
    and the location of the peak.
 * `nikon-tiff-info.py`: reads text metadata out of tiffs produced by Nikon NIS
    Elements. In addition calibration is also read out.
+*  `lecroy.py`: read Lecroy binary waveform files, based on template `LECROY_2_3`.
 
 License
 =======
