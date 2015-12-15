@@ -69,6 +69,7 @@ def get_commandline_parser():
   parser.add_argument('start_time', type=str, help='Start time of ultrasound exposure')
   parser.add_argument('exposure_duration', type=str, help='Ultrasound exposure time')
   parser.add_argument('inputfiles', nargs='+', help='Files to compute the power spectrum for')
+  parser.add_argument('-npz', action='store_true', help='If given output will be .power.npz instead of csv')
   return parser
 
 def parse_number(s):
@@ -113,11 +114,14 @@ if __name__ == '__main__':
       mat = reader.mat
       tvec = mat[:,0]
       xvec = mat[:,1]
+      trigtime = None
     elif inputfile.endswith('trc'):
       p('  Lecroy')
-      from lecroy import read_timetrace
-      tvec, xvec = read_timetrace(inputfile)
-      print tvec.shape, xvec.shape
+      from lecroy import LecroyBinaryWaveform
+      bwf = LecroyBinaryWaveform(inputfile)
+      tvec = bwf.WAVE_ARRAY_1_time
+      xvec = bwf.WAVE_ARRAY_1
+      trigtime = bwf.TRIG_TIME
 
     nsamples = len(tvec)
 
@@ -144,10 +148,17 @@ if __name__ == '__main__':
     filename, ext = splitext(inputfile)
     outputfile = filename + extsep + OUTPUT_EXT
 
-    headers = ['Computed from %s sampling freq %.2f Hz'%(inputfile, fs)]
-    headers.append('Window: %f --> %f'%(start_time, end_time))
-    header = '\n'.join(headers)
-
+    metadata = dict(input_file=inputfile,
+                    sampling_freq=fs,
+                    window=(start_time,end_time),
+                    trigtime=trigtime)
+    import json
+    header = json.dumps(metadata, indent=1, sort_keys=True)
     outmat = np.column_stack((freqs, ps))
-    np.savetxt(outputfile, outmat, delimiter=' ', header=header)
-    p('\tWrote power spectrum to %s'%(outputfile))
+
+    if cmdargs['npz']:
+      np.savez(outputfile, data=outmat, header=header)
+      p('\tWrote power spectrum to %s.npz'%(outputfile))
+    else:
+      np.savetxt(outputfile, outmat, delimiter=' ', header=header)
+      p('\tWrote power spectrum to %s'%(outputfile))
