@@ -18,7 +18,7 @@ In images produced by this program, the Z position *always* increases as one mov
 """
 from __future__ import division
 # we will need YZScanData from SIOS. Should fix this at some point
-SIOS_PATH='../code/SIOS_control;../../code/SIOS_control'
+SIOS_PATH='../code/SIOS_control;../../code/SIOS_control;/data/DPhil/code/SIOS_control'
 
 # we will also need the stats module from data analysis tools
 DATA_TOOLS_PATH='.'
@@ -55,13 +55,18 @@ def convert(datafile, noadjust):
   zrange = zvec.max() - zvec.min()
 
   # assumption is that all z scans are done using the same z stepping
-  # The 1.33 is again the refractive index correction factor
   pw = zrange/(len(zvec))
   ph = wrange/(len(wvec))
 
-  # pix is in volts (0..20) and we want to convert it to uint16 as follows:
-  # n = (2**16-1)*v/20
+  # the scan matrix stores voltage values as floats. The original values were
+  # unsigned 16 bit integers. We undo the transformation, which is somewhat
+  # terrible, using
+  #   n = (2**16-1)*v/20
   # Where n is the integer result, v is the voltage we have stored.
+  #
+  # Note that while the ADS7825 uses 16 bit integers to hold +/-10 V, due to
+  # the way we sum multiple readings to implement exposure control, we in fact
+  # treat all integers as unsigned and add them together.
   pix = scandata.matrix
 
   intpix = (2**16-1)*pix/20
@@ -111,6 +116,7 @@ def convert(datafile, noadjust):
                   wlim=wlim,
                   starttime=ctime(tstart),
                   endtime=ctime(tend),
+                  wstep=wvec[1]-wvec[0],
                   adjusted=not noadjust,
                   comments=scandata.comments)
 
