@@ -1,4 +1,4 @@
-function action(dir, filename, includefilename) {
+function action(dir, filename, addfilename, addcolourbar) {
 	print("Processing "+filename);
 	
 	if (endsWith(dir, File.separator) == false) {
@@ -28,8 +28,8 @@ function action(dir, filename, includefilename) {
 
 	close();
 	
-	savewithlut(dir, filename, "Fire", "PNG", includefilename);
-	savewithlut(dir, filename, "ICA", "PNG", includefilename);
+	savewithlut(dir, filename, "Fire", "PNG", addfilename, addcolourbar);
+	savewithlut(dir, filename, "ICA", "PNG", addfilename, addcolourbar);
 }
 
 //action(getInfo("image.directory"), getInfo("image.filename"));
@@ -40,12 +40,18 @@ macro "SIOS Post Action Tool - C000De9C000C111D3cD51D76D86C111D67D68D97D98C111D7
     tiffiles = filterFilesByExtension(files, '.tif');
 
 	Dialog.create("SIOS Post Options");
-	Dialog.addChoice("Include Filename", newArray("Yes", "No"));
+	Dialog.addChoice("Add Filename", newArray("Yes", "No"));
+	Dialog.addChoice("Add Colourbar", newArray("Yes", "No"));
 	Dialog.show();
 
-	includefilename = 0;
+	addfilename = 0;
 	if (Dialog.getChoice() == "Yes") {
-		includefilename = 1;
+		addfilename = 1;
+	}
+
+	addcolourbar = 0;
+	if (Dialog.getChoice() == "Yes") {
+	  addcolourbar = 1;
 	}
 	
 	setBatchMode(true);
@@ -53,7 +59,7 @@ macro "SIOS Post Action Tool - C000De9C000C111D3cD51D76D86C111D67D68D97D98C111D7
 	for (idx = 0; idx < tiffiles.length; ++idx) {
     showProgress((idx+1)/tiffiles.length);
 		filename = tiffiles[idx];
-    action(dir, filename, includefilename);
+    action(dir, filename, addfilename, addcolourbar);
 	}
 	
 	showMessage("Processing complete.");
