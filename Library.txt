@@ -1,27 +1,27 @@
 function drawshadowedtext(text, x, y) {
-	setColor(0, 0, 0);	
-	Overlay.drawString(text, x+1, y+1);
-	setColor(255, 255, 255);	
-	Overlay.drawString(text, x, y);
-	updateDisplay();
+  setColor(0, 0, 0);
+  Overlay.drawString(text, x+1, y+1);
+  setColor(255, 255, 255);
+  Overlay.drawString(text, x, y);
+  updateDisplay();
 }
 
 function filterFilesByExtension(files, ext) {
   accepted = newArray(files.length);
   adx = 0;
-	for (idx = 0; idx < files.length; ++idx) {
-		filename = files[idx];
-		if (endsWith(filename, ext)) {
-		  accepted[adx] = filename;
-		  adx += 1;
-		}
-	}
+  for (idx = 0; idx < files.length; ++idx) {
+    filename = files[idx];
+    if (endsWith(filename, ext)) {
+      accepted[adx] = filename;
+      adx += 1;
+    }
+  }
 
-	return Array.slice(accepted, 0, adx);
+  return Array.slice(accepted, 0, adx);
 }
 
 function savewithlut(dir, filename, lut, lutext, includefilename, addcolourbar) {
-	if (indexOf(filename, "nd2") >= 0) {
+  if (indexOf(filename, "nd2") >= 0) {
     run("Bio-Formats Windowless Importer", "open="+dir+filename);
     ext="nd2";
   } else if (indexOf(filename, "tif") >=0 ) {
@@ -29,26 +29,29 @@ function savewithlut(dir, filename, lut, lutext, includefilename, addcolourbar) 
     ext="tif";
   }
 
-    namenoext = substring(filename, 0, indexOf(filename, "."+ext));
+  namenoext = substring(filename, 0, indexOf(filename, "."+ext));
 
-	fontsize=10;
-	setFont("SansSerif", fontsize, "bold");
+  fontsize=10;
+  setFont("SansSerif", fontsize, "bold");
 
-	run(lut);
-	if (addcolourbar) {
+  run("Scale Bar...", "width=500 height=4 font=8 color=White background=None location=[Lower Right] bold overlay");
+
+  run(lut);
+
+  if (addcolourbar) {
     run("Calibration Bar...", "location=[Upper Right] fill=White label=Black number=5 decimal=0 font=8 zoom=0.8 overlay");
   }
 
-	run("Scale Bar...", "width=500 height=4 font=8 color=White background=None location=[Lower Right] bold overlay");
 
-	if (includefilename) {
-		drawshadowedtext(namenoext, 0, fontsize);
-	}
-	
-	wait(400);
-	
-	print("--> Saving with LUT="+lut);
-	saveAs(lutext, dir  + namenoext+"-"+lut+"."+lutext);
+  if (includefilename) {
+    drawshadowedtext(namenoext, 0, fontsize);
+  }
 
-	close();	
+  wait(400);
+
+  print("--> Saving with LUT="+lut);
+
+  saveAs(lutext, dir  + namenoext+"-"+lut+"."+lutext);
+
+  close();
 }
