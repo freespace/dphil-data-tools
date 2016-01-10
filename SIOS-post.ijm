@@ -54,7 +54,9 @@ macro "SIOS Post Action Tool - C000De9C000C111D3cD51D76D86C111D67D68D97D98C111D7
 	  addcolourbar = 1;
 	}
 	
-	setBatchMode(true);
+	// XXX Recently (2016-01-10), if batch mode is enable images are no longer
+	// saved in colour. Therefore we disable it for now.
+	//setBatchMode(true);
 	
 	for (idx = 0; idx < tiffiles.length; ++idx) {
     showProgress((idx+1)/tiffiles.length);
