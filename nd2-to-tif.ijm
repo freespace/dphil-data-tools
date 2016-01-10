@@ -5,8 +5,8 @@ function action(dir, filename) {
 		dir += File.separator;
 	}
 
-	savewithlut(dir, filename, "Grays", "TIF");
-	savewithlut(dir, filename, "Grays", "PNG");
+	savewithlut(dir, filename, "Grays", "TIF", true, false);
+	savewithlut(dir, filename, "Grays", "PNG", true, false);
 }
 
 //action(getInfo("image.directory"), getInfo("image.filename"));
