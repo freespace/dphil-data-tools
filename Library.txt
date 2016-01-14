@@ -20,7 +20,7 @@ function filterFilesByExtension(files, ext) {
   return Array.slice(accepted, 0, adx);
 }
 
-function savewithlut(dir, filename, lut, lutext, includefilename, addcolourbar) {
+function savewithlut(dir, filename, lut, lutext, includefilename, addcolourbar, min, max) {
   if (indexOf(filename, "nd2") >= 0) {
     run("Bio-Formats Windowless Importer", "open="+dir+filename);
     ext="nd2";
@@ -37,6 +37,12 @@ function savewithlut(dir, filename, lut, lutext, includefilename, addcolourbar) 
   run("Scale Bar...", "width=500 height=4 font=8 color=White background=None location=[Lower Right] bold overlay");
 
   run(lut);
+
+  if (min != 0 || max != 0) {
+    print("--> Setting min = " + min);
+    print("--> Setting max = " + max);
+    setMinAndMax(min, max);
+  }
 
   if (addcolourbar) {
     run("Calibration Bar...", "location=[Upper Right] fill=White label=Black number=5 decimal=0 font=8 zoom=0.8 overlay");
