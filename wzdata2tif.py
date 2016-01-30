@@ -77,10 +77,25 @@ def convert(datafile, noadjust):
   im = Image.fromstring('I;16', (w, h), intpix.tostring())
 
   if not noadjust:
+    # XXX One of the things we need to do is account for the fact that our
+    # pixels out of SIOS can be non-square, e.g. 20 um in Z and 50 um in X.
+    # Since images are displayed with square pixels, this means that without
+    # correction features will appear squashed, for example X, because each
+    # pixel represents 50 um, but is shown at the same physical size as the
+    # stepping in Z at 20 um.
+    #
+    # To fix this, we need to simply stretch the image in height, since it is
+    # nearly almost the case that Z stepping is going to be the smaller of the
+    # two, and Z goes horizontally. The amount we need to stretch by is the
+    # ratio between pixel height and pixel width
+    #
+    # Due to non-integer ratios of pixel height and pixel width, there will be
+    # some artifacts. For example, a 20x50 pixel cannot be exactly split into
+    # 1x2 array of 20x20 pixels. How this is handled depends on the sampling
+    # algorithm as ask PIL to use. For now we are using NEAREST which avoids
+    # introducing any "new" data, but does mean we might drop pixels.
     newsize = None
     if int(ph*100) != int(pw*100):
-      # make pixels square. This means scaling the image in height until
-      # ph matches pw.
       newsize = (w, h*ph/pw)
       ph /= ph/pw
 
