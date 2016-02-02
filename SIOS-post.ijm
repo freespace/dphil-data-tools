@@ -81,7 +81,6 @@ macro "SIOS Post Action Tool - C000De9C000C111D3cD51D76D86C111D67D68D97D98C111D7
       showProgress(0.5*(idx+1)/tiffiles.length);
       filename = tiffiles[idx];
       minmax(dir, filename);
-      convertunit(dir, filename);
     }
     print("min=" + globalmin);
     print("max=" + globalmax);
@@ -93,6 +92,7 @@ macro "SIOS Post Action Tool - C000De9C000C111D3cD51D76D86C111D67D68D97D98C111D7
 	for (idx = 0; idx < tiffiles.length; ++idx) {
     showProgress(0.5+0.5*(idx+1)/tiffiles.length);
 		filename = tiffiles[idx];
+    convertunit(dir, filename);
     savewithlut(dir, filename, "Fire", "PNG", addfilename, addcolourbar, globalmin, globalmax);
     savewithlut(dir, filename, "ICA", "PNG", addfilename, addcolourbar, globalmin, globalmax);
 	}
