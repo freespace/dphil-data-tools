@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
 """
-Computes power spectrum. Input files are assumed to contain time in the first
-column and some kind of amplitude measurement in the second.
+Computes power spectrum.
 
-Output will be another csv file that has the same filename but with extension
+Inputs can be CSV files or Lecroy trc files.
+
+Output will be a csv file that has the same filename but with extension
 of power. The first column will be frequency, the second column will be U^2
 where U is the unit of measurement in the second column of the input.
 
@@ -73,6 +74,11 @@ def get_commandline_parser():
   return parser
 
 def parse_number(s):
+  # negative values are specified by doing \\- or '\-' so the \ is
+  # left in and we transparently remove it
+  if s[0] == '\\':
+    s = s[1:]
+
   suffix = s[-1]
   if suffix.isdigit():
     return float(s)
@@ -119,8 +125,8 @@ if __name__ == '__main__':
       p('  Lecroy')
       from lecroy import LecroyBinaryWaveform
       bwf = LecroyBinaryWaveform(inputfile)
-      tvec = bwf.WAVE_ARRAY_1_time
-      xvec = bwf.WAVE_ARRAY_1
+      tvec = bwf.mat[:,0]
+      xvec = bwf.mat[:,1]
       trigtime = bwf.TRIG_TIME
 
     nsamples = len(tvec)
@@ -151,7 +157,7 @@ if __name__ == '__main__':
     metadata = dict(input_file=inputfile,
                     sampling_freq=fs,
                     window=(start_time,end_time),
-                    trigtime=trigtime)
+                    trigtime=str(trigtime))
     import json
     header = json.dumps(metadata, indent=1, sort_keys=True)
     outmat = np.column_stack((freqs, ps))
