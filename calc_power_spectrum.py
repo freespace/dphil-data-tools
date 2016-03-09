@@ -47,11 +47,16 @@ def calc_power_spectrum(x, fs):
   the time between samples are the same, and is equal to
   1/fs.
 
+  Data is zero'd by subtracting the median x value before
+  calculation of frequency contents. Doing so removes the
+  DC components which is often very large.
+
   The frequency and the power at each frequency is returned
   as a two-tuple. Note that the two-sided power spectrum is
   returned, and the output has been normalised by the number
   elements in x.
   """
+  x -= np.median(x)
   X = np.fft.fft(x)
   ps = np.abs(X)**2
   freqs = np.fft.fftfreq(x.size, 1.0/fs)
@@ -71,6 +76,7 @@ def get_commandline_parser():
   parser.add_argument('exposure_duration', type=str, help='Ultrasound exposure time')
   parser.add_argument('inputfiles', nargs='+', help='Files to compute the power spectrum for')
   parser.add_argument('-npz', action='store_true', help='If given output will be .power.npz instead of csv')
+  parser.add_argument('-suffix', type=str, default='', help='If given output will be added to file name just before .power')
   return parser
 
 def parse_number(s):
@@ -152,7 +158,8 @@ if __name__ == '__main__':
     ps = ps[onesidedmask]
 
     filename, ext = splitext(inputfile)
-    outputfile = filename + extsep + OUTPUT_EXT
+    suffix = cmdargs['suffix']
+    outputfile = filename + suffix + extsep + OUTPUT_EXT
 
     metadata = dict(input_file=inputfile,
                     sampling_freq=fs,
