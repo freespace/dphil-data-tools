@@ -292,6 +292,7 @@ class Plot(object):
 
       if csv.csv_source == 'calc_power_spectrum.py':
         xvec /= 1000
+        self.logy = True
 
       if self._kwargs.get('sub_x0', False):
         xvec -= xvec[0]
