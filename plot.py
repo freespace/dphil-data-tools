@@ -7,7 +7,7 @@ Since this script is intended for mywork there are certain presets which may
 or may not be useful to a general user.
 """
 
-from os.path import basename, splitext, abspath
+import os.path as op
 
 import numpy as np
 import matplotlib.pyplot as PLT
@@ -92,11 +92,11 @@ class Plot(object):
     suffix += '.'+ext
 
     if filename is None:
-      startfile = splitext(csvfiles[0])[0]
+      startfile = op.splitext(csvfiles[0])[0]
       if len(csvfiles) == 1:
         filename = startfile + suffix
       else:
-        endfile = splitext(basename(csvfiles[-1]))[0]
+        endfile = op.splitext(op.basename(csvfiles[-1]))[0]
         filename = startfile+'__'+endfile+suffix
     else:
       filename += suffix
@@ -231,7 +231,7 @@ class Plot(object):
       # csv files, then when we plot it is confusing which
       # trace corresponds to which file. In these cases
       # we populate the labels with the basename of the csvfiles
-      self.labels = map(basename, csvfiles)
+      self.labels = map(op.basename, csvfiles)
 
       # shorten/truncate filenames in the legend if they are over 16
       # characters
@@ -270,7 +270,12 @@ class Plot(object):
 
       assert csv is not None, 'Could not read CSV file %s'%(csvfile)
 
-      headers += ['# File: '+abspath(csvfile)]
+      pathcomponents = op.abspath(csvfile).split(op.sep)
+      filespec = op.sep.join(pathcomponents[-4:])
+      if len(pathcomponents) > 4:
+        filespec = '...'+filespec
+
+      headers += ['# File: '+filespec]
       if self._single:
         headers.extend(csv.comments)
 
@@ -343,7 +348,7 @@ class Plot(object):
         fontsize = 11
 
       ax.legend(
-          loc='upper right',
+          loc='lower right',
           ncol=1,
           prop={'size':fontsize})
 
