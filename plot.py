@@ -9,12 +9,16 @@ or may not be useful to a general user.
 
 from os.path import basename, splitext, abspath
 
-import numpy as NP
+import numpy as np
 import matplotlib.pyplot as PLT
 
 import csvtools as CSV
 from utils import keypress
 
+class CSVProxy(object):
+  mat = None
+  comments = None
+  csv_source = None
 
 import itertools
 linestyles = ['-', '-o', '-d', '-s', '-*', '-x']
@@ -168,10 +172,10 @@ class Plot(object):
       # However in future if we do have sampling time for each sample, we will
       # want to use it, so put in a warning if we detect we have unique sample
       # times for each sample
-      if len(NP.unique(tvec)) == len(tvec):
+      if len(np.unique(tvec)) == len(tvec):
         print '!! WARNING !! Sampling times available but being ignored'
 
-      dt = NP.abs(tvec[0] - tvec[-1])
+      dt = np.abs(tvec[0] - tvec[-1])
       nsamples = len(yvec)
       sampling_rate = nsamples / dt
 
@@ -190,12 +194,12 @@ class Plot(object):
       from scipy.interpolate import interp1d
       # first down sample to smooth out the data
       interpf = interp1d(xvec, yvec, kind='cubic')
-      xnew = NP.linspace(xvec.min(), xvec.max(), len(xvec)/2)
+      xnew = np.linspace(xvec.min(), xvec.max(), len(xvec)/2)
       ynew = interpf(xnew)
 
       # now up sample it to make it it look smooth
       interpf = interp1d(xnew, ynew, kind='cubic')
-      xnew = NP.linspace(xvec.min(), xvec.max(), len(xvec))
+      xnew = np.linspace(xvec.min(), xvec.max(), len(xvec))
       ynew = interpf(xnew)
 
     l = None
@@ -245,7 +249,26 @@ class Plot(object):
     for csvidx in xrange(len(csvfiles)):
       csvfile = csvfiles[csvidx]
       print 'Plotting',csvfile
-      csv = CSV.CSVReader(csvfile)
+      
+      csv = None
+      if csvfile.endswith('csv'):
+        csv = CSV.CSVReader(csvfile)
+      elif csvfile.endswith('trc'):
+        from lecroy import LecroyBinaryWaveform
+        bwave = LecroyBinaryWaveform(csvfile)
+        csv = bwave
+        csv.csv_source = 'LECROYWR104Xi_binary'
+      elif csvfile.endswith('power.npz'):
+        npzfile = np.load(csvfile)
+        data = npzfile['data']
+        header = npzfile['header'].item()
+
+        csv = CSVProxy()
+        csv.mat = data
+        csv.comments = [header]
+        csv.csv_source = 'calc_power_spectrum.py'
+
+      assert csv is not None, 'Could not read CSV file %s'%(csvfile)
 
       headers += ['# File: '+abspath(csvfile)]
       if self._single:
@@ -266,6 +289,9 @@ class Plot(object):
         tvec = csv.mat[:,3]
       else:
         tvec = None
+
+      if csv.csv_source == 'calc_power_spectrum.py':
+        xvec /= 1000
 
       if self._kwargs.get('sub_x0', False):
         xvec -= xvec[0]
@@ -296,6 +322,8 @@ class Plot(object):
           ret = 'Z Position (mm)', 'Fluoresence (V)'
         elif source.startswith('LECROY'):
           ret = 'Time (seconds)', 'Y LABEL (V)'
+        elif source == 'calc_power_spectrum.py':
+          ret = 'Frequency (KHz)', 'V^2'
       return ret
 
     xlabel, ylabel = _xylabel_by_source()
@@ -336,6 +364,7 @@ class Plot(object):
       xaxis.grid()
 
     texttoplot = ['']
+    # comments needs to be a list
     if self.comments is not None:
       texttoplot.extend(map(lambda x: '# '+x, self.comments))
 
