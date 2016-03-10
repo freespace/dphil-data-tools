@@ -348,7 +348,7 @@ class Plot(object):
         fontsize = 11
 
       ax.legend(
-          loc='lower right',
+          loc=self.legend_position,
           ncol=1,
           prop={'size':fontsize})
 
@@ -425,6 +425,8 @@ def get_commandline_parser():
 
   parser.add_argument('-xlabel', type=str, help='X label.')
   parser.add_argument('-ylabel', type=str, help='Y label.')
+
+  parser.add_argument('-legend_position', type=str, default='upper right', help='Matplotlib position to put the legend, defaults to "upper right". Note this must be quoted')
   parser.add_argument('-labels', type=str, nargs='+', help='Labels for each series to use in the legend. There must be one label per serie.')
 
   parser.add_argument('-normalise', action='store_true', default=False, help='If given, the y-values will be normalised to be between [0..1].')
@@ -453,7 +455,7 @@ def get_commandline_parser():
   parser.add_argument('-include_first_last', action='store_true', default=False, help='If given, the first and last csv given is always plotted, regardless of skip, max_traces, or start_offset')
 
   parser.add_argument('-comments', type=str, nargs='+', default=None, help='If given, will be displayed in top left of plot in background. Not affected by -no_debug')
-  parser.add_argument('csvfiles', nargs='+', help='CSV files to plot')
+  parser.add_argument('csvfiles', nargs='+', help='CSV/npz/trc files to plot')
 
   return parser
 
