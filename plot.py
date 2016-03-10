@@ -329,7 +329,7 @@ class Plot(object):
         elif source.startswith('LECROY'):
           ret = 'Time (seconds)', 'Y LABEL (V)'
         elif source == 'calc_power_spectrum.py':
-          ret = 'Frequency (KHz)', 'V^2'
+          ret = 'Frequency (KHz)', '$V^{\ 2}$'
       return ret
 
     xlabel, ylabel = _xylabel_by_source()
