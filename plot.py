@@ -249,7 +249,7 @@ class Plot(object):
     for csvidx in xrange(len(csvfiles)):
       csvfile = csvfiles[csvidx]
       print 'Plotting',csvfile
-      
+
       csv = None
       if csvfile.endswith('csv'):
         csv = CSV.CSVReader(csvfile)
@@ -461,7 +461,6 @@ def get_commandline_parser():
 
 
 if __name__ == '__main__':
-  parser = get_commandline_parser()
   cmdargs = parse_commandline_arguments()
 
   plotfile = cmdargs['plotfile']
