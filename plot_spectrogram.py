@@ -61,7 +61,7 @@ def plot_spectrogram(**cmdargs):
     # enforce the condition that power spectrums are monotically into the
     # future
     if lastrigtime is not None:
-      assert trigtime > lastrigtime
+      assert trigtime > lastrigtime, pfile
     lastrigtime = trigtime
 
     if binpower is None:
@@ -106,6 +106,8 @@ def plot_spectrogram(**cmdargs):
              cmap=cmdargs['cmap'],
              norm=mpl.colors.LogNorm(), # logs the colour values
              origin = 'lower',          # put low freq near (0,0)
+             vmin=1e-7,
+             vmax=1,
              )
 
   textvec = ['File: %s'%(powerfilevec[0])]
@@ -147,6 +149,7 @@ def plot_spectrogram(**cmdargs):
     pdffile = '%s__%s-spectrogram.pdf'%(firstlast[0], firstlast[1])
 
     f = plt.figure(plt.get_fignums()[0])
+    f.set_size_inches(16, 9)
     savefig(f, pdffile)
 
 def get_commandline_parser():
