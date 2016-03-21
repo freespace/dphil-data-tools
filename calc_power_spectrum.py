@@ -56,7 +56,7 @@ def calc_power_spectrum(x, fs):
   returned, and the output has been normalised by the number
   elements in x.
   """
-  x -= np.median(x)
+  x -= np.mean(x)
   X = np.fft.fft(x)
   ps = np.abs(X)**2
   freqs = np.fft.fftfreq(x.size, 1.0/fs)
