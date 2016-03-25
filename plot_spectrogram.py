@@ -14,6 +14,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
+import matplotlib_setup
+
 mpl.rcParams['mathtext.default'] = 'regular'
 
 def savefig(fig, *args, **kwargs):
@@ -140,6 +142,12 @@ def plot_spectrogram(**cmdargs):
       fig.canvas.mpl_connect('key_press_event', keypress)
 
     plt.show()
+  
+    # bring the window to front
+    cfm = plt.get_current_fig_manager()
+    cfm.window.activateWindow()
+    cfm.window.raise_()
+
   else:
     import os.path as op
     firstlast = (powerfilevec[0], powerfilevec[-1])
@@ -157,7 +165,7 @@ def get_commandline_parser():
   parser = argparse.ArgumentParser(description='Plots spectrogram by combining individual power spectrums')
 
   parser.add_argument('-title', default='', help='Plot title')
-  parser.add_argument('-cmap', default='jet', help='Matplotlib colormap to use, defaults to "jet"')
+  parser.add_argument('-cmap', default='seismic', help='Matplotlib colormap to use, defaults to "jet"')
 
   parser.add_argument('-binsize', type=int, default=1, help='Perform binning with the given bin size. Bin size does not have to be a integer divisor of the number of samples')
 
