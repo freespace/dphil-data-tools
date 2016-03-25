@@ -12,6 +12,8 @@ import os.path as op
 import numpy as np
 import matplotlib.pyplot as PLT
 
+import matplotlib_setup
+
 import csvtools as CSV
 from utils import keypress
 
