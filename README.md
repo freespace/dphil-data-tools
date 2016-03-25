@@ -17,6 +17,20 @@ Brief Descriptions
    Elements. In addition calibration is also read out.
 *  `lecroy.py`: read Lecroy binary waveform files, based on template `LECROY_2_3`.
 
+Note that the `wz*` scripts will *not* work because they rely on classes
+that is found in `SIOS_control` which is not currently released. This is
+acceptable for now because there is no data in any open-access journals
+that needs to be converted.
+
+Environmental Variables
+=======================
+
+The following environmental variables are expected
+
+    DPHIL_PATH="/path/to/DPhil/dir/"
+    SIOS_PATH="$DPHIL_PATH/code/SIOS_control"
+    DPHIL_BIN="$DPHIL_PATH/code/data_analysis_tools/"
+
 License
 =======
 
