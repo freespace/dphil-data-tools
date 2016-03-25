@@ -1,11 +1,6 @@
 import matplotlib.pyplot as plt
 import sys
 
-# on OS X we are not getting keypress events with the default backend, but we
-# do with tkinter
-if sys.platform == 'darwin':
-  plt.switch_backend('tkAgg')
-
 def keypress(event):
   """
   Use this to enable pressing 'q' to quit matplotlib:
