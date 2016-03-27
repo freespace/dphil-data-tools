@@ -166,12 +166,12 @@ if __name__ == '__main__':
                     window=(start_time,end_time),
                     trigtime=str(trigtime))
     import json
-    header = json.dumps(metadata, indent=1, sort_keys=True)
     outmat = np.column_stack((freqs, ps))
 
     if cmdargs['npz']:
-      np.savez(outputfile, data=outmat, header=header)
+      np.savez(outputfile, data=outmat, header=metadata, source='calc_power_spectrum.py')
       p('\tWrote power spectrum to %s.npz'%(outputfile))
     else:
+      header = json.dumps(metadata, indent=1, sort_keys=True)
       np.savetxt(outputfile, outmat, delimiter=' ', header=header)
       p('\tWrote power spectrum to %s'%(outputfile))
