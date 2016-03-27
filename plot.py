@@ -255,20 +255,37 @@ class Plot(object):
       csv = None
       if csvfile.endswith('csv'):
         csv = CSV.CSVReader(csvfile)
-      elif csvfile.endswith('trc'):
+
+      if csvfile.endswith('trc'):
         from lecroy import LecroyBinaryWaveform
         bwave = LecroyBinaryWaveform(csvfile)
         csv = bwave
         csv.csv_source = 'LECROYWR104Xi_binary'
-      elif csvfile.endswith('power.npz'):
+
+      if csvfile.endswith('.npz'):
         npzfile = np.load(csvfile)
-        data = npzfile['data']
-        header = npzfile['header'].item()
+        if 'source' in npzfile:
+          source = npzfile['source'].item()
+        else:
+          source = None
+
+        if csvfile.endswith('.power.npz'):
+          data = npzfile['data']
+          header = npzfile['header'].item()
+          csv.csv_source = 'calc_power_spectrum.py'
+
+        if source == 'wzextract.py':
+          data = npzfile['data']
+          header = npzfile['header'].item()
+
+        if type(header) is dict:
+          import json
+          header = json.dumps(header, indent=1, sort_keys=True)
 
         csv = CSVProxy()
         csv.mat = data
         csv.comments = [header]
-        csv.csv_source = 'calc_power_spectrum.py'
+        csv.csv_source = source
 
       assert csv is not None, 'Could not read CSV file %s'%(csvfile)
 
@@ -328,10 +345,15 @@ class Plot(object):
       if source is not None:
         if source == 'SIOS':
           ret = 'Z Position (mm)', 'Fluoresence (V)'
-        elif source.startswith('LECROY'):
+
+        if source.startswith('LECROY'):
           ret = 'Time (seconds)', 'Y LABEL (V)'
-        elif source == 'calc_power_spectrum.py':
+
+        if source == 'calc_power_spectrum.py':
           ret = 'Frequency (KHz)', '$V^{\ 2}$'
+
+        if source == 'wzextract.py':
+          ret = 'Z position (um)', 'PMT Voltage (V)'
       return ret
 
     xlabel, ylabel = _xylabel_by_source()
