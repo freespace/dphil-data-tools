@@ -27,9 +27,9 @@ Environmental Variables
 
 The following environmental variables are expected
 
-    DPHIL_PATH="/path/to/DPhil/dir/"
-    SIOS_PATH="$DPHIL_PATH/code/SIOS_control"
-    DPHIL_BIN="$DPHIL_PATH/code/data_analysis_tools/"
+    export DPHIL_PATH="/path/to/DPhil/dir/"
+    export SIOS_PATH="$DPHIL_PATH/code/SIOS_control"
+    export DPHIL_BIN="$DPHIL_PATH/code/data_analysis_tools/"
 
 License
 =======
