@@ -41,11 +41,13 @@ def main(**kwargs):
   ymatrix = np.column_stack(yveclist)
 
   yvec_mean = np.mean(ymatrix, 1)
-  yvec_std = np.std(ymatrix, 1)
 
-  outmat = np.column_stack((xvec0, yvec_mean, yvec_std))
+  from scipy.stats import sem
+  yvec_sem = sem(ymatrix, 1)
 
-  outputfile = '%s__%s.average.npz'%(npzfilevec[0], npzfilevec[-1])
+  outmat = np.column_stack((xvec0, yvec_mean, yvec_sem))
+
+  outputfile = '%s__%s.average.npz'%(npzfilevec[0], npzfilevec[-1][:11])
   np.savez(outputfile, data=outmat, header=dict(inputs=npzfilevec), source='average_traces.py')
   print('Wrote average trace to %s'%(outputfile))
 
