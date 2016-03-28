@@ -162,7 +162,7 @@ class Plot(object):
     tstart -= self._tstart0
     return 't=%.1f s'%(tstart)
 
-  def _plot_traces(self, lbl, xvec, yvec, tvec):
+  def _plot_traces(self, lbl, xvec, yvec, tvec, yerr=None):
     if self.negoverflow:
       print 'Fixing negative overflow assuming +/-10V range'
       # b/c of exposure control, the accumulated reading value can exceed
@@ -233,7 +233,7 @@ class Plot(object):
     if self.linestyle:
       ls = self.linestyle
 
-    self._ax.plot(xnew, ynew, ls, color=lc, label=l, **self.plotkwargs)
+    self._ax.errorbar(xnew, ynew, linestyle=ls, color=lc, label=l, yerr=yerr, **self.plotkwargs)
 
   def plot(self):
     csvfiles = self.csvfiles
@@ -289,6 +289,10 @@ class Plot(object):
       xvec = data.matrix[:,0]
       yvec = data.matrix[:,1]
 
+      yerr = None
+      if data.matrix.shape[1] >= 3 and self.no_errorbar == False:
+        yerr = data.matrix[:,2]
+
       if data.source == 'SIOS':
         tvec = csv.mat[:,3]
       else:
@@ -315,7 +319,7 @@ class Plot(object):
         yvec -= yvec.min()
         yvec /= yrange
 
-      self._plot_traces(lbl, xvec, yvec, tvec)
+      self._plot_traces(lbl, xvec, yvec, tvec, yerr=yerr)
 
       if self.normalise:
         ax.hlines(0.5, xvec.min(), xvec.max(), linestyles='dotted', colors=['gray'])
@@ -425,6 +429,7 @@ def get_commandline_parser():
   parser.add_argument('-normalise', action='store_true', default=False, help='If given, the y-values will be normalised to be between [0..1].')
 
   parser.add_argument('-logy', action='store_true', default=False, help='If given, the y-axis will be log')
+  parser.add_argument('-no_errorbar', action='store_true', default=False, help='If given, errorbars will not be plotted')
 
   parser.add_argument('-ylim', type=float, nargs=2, default=None, help='If given, the y limits will be as given')
   parser.add_argument('-xlim', type=float, nargs=2, default=None, help='If given, the x limits will be as given')
