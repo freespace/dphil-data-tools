@@ -88,6 +88,8 @@ class Plot(object):
       suffix += 'Y0'
     if self.sub_x0:
       suffix += 'X0'
+    if self.register_on_ymax:
+      suffix += 'REGYMAX'
 
     if len(suffix):
       suffix = '-'+suffix
