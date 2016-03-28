@@ -108,6 +108,19 @@ class Plot(object):
     else:
       filename += suffix
 
+    # it is entirely possible to end up with more than 255 characters, which
+    # is more than any FS currently in use supports, so we truncate the
+    # middle. 
+    maxlen = 128
+    if len(filename) >= maxlen:
+      middle = '_TRUNCATED_'
+      l = (maxlen - len(middle))//2
+
+      start = filename[:l]
+      end = filename[-l:]
+
+      filename = start + middle + end
+
     return filename
 
   def savefig(self, *args, **kwargs):
@@ -327,6 +340,10 @@ class Plot(object):
         xvec /= 1000
         self.logy = True
 
+      if self._kwargs.get('register_on_ymax', False):
+        maxidx = np.argmax(yvec)
+        xvec -= xvec[maxidx]
+
       if self._kwargs.get('sub_x0', False):
         xvec -= xvec[0]
 
@@ -450,6 +467,8 @@ def get_commandline_parser():
 
   parser.add_argument('-sub_y0', action='store_true', help='If given, the first y value is subtracted from all y values')
   parser.add_argument('-sub_x0', action='store_true', help='If given, the first x value is subtracted from all x values')
+
+  parser.add_argument('-register_on_ymax', action='store_true', help='If given, the x value at which y is maximum will be subtracted from all x value, effectively putting the maximum y value at x=0')
 
   parser.add_argument('-xmultiplier', type=float, default=1, help='Value to multiplu x by before plotting')
 
