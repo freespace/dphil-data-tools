@@ -95,6 +95,11 @@ class Plot(object):
 
     if filename is None:
       startfile = op.splitext(csvfiles[0])[0]
+
+      # the file might have a path in it. We discard it so the output
+      # is always in the directory we are currently in
+      startfile = op.basename(startfile)
+
       if len(csvfiles) == 1:
         filename = startfile + suffix
       else:
