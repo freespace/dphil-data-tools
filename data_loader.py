@@ -78,5 +78,3 @@ class DataLoader(object):
         ret = 'Z position (um)', 'PMT Voltage (V)'
 
     return ret
-
-
