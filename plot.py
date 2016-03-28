@@ -278,6 +278,10 @@ class Plot(object):
           data = npzfile['data']
           header = npzfile['header'].item()
 
+        if source == 'average_traces.py':
+          data = npzfile['data']
+          header = npzfile['header'].item()
+
         if type(header) is dict:
           import json
           header = json.dumps(header, indent=1, sort_keys=True)
@@ -354,6 +358,7 @@ class Plot(object):
 
         if source == 'wzextract.py':
           ret = 'Z position (um)', 'PMT Voltage (V)'
+
       return ret
 
     xlabel, ylabel = _xylabel_by_source()
