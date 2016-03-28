@@ -233,7 +233,24 @@ class Plot(object):
     if self.linestyle:
       ls = self.linestyle
 
-    self._ax.errorbar(xnew, ynew, linestyle=ls, color=lc, label=l, yerr=yerr, **self.plotkwargs)
+    # make errorbar color more transparent so we can see the actual data
+    from matplotlib import colors
+    ecolor = colors.colorConverter.to_rgba(lc, 0.5)
+
+    # if we have a lot of data, then reduce error bar density
+    errorevery = 1
+    if (len(ynew) > 100):
+      errorevery = 2
+
+    self._ax.errorbar(xnew,
+                      ynew,
+                      linestyle=ls,
+                      color=lc,
+                      label=l,
+                      yerr=yerr,
+                      ecolor=ecolor,
+                      errorevery=errorevery,
+                      **self.plotkwargs)
 
   def plot(self):
     csvfiles = self.csvfiles
