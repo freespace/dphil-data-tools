@@ -14,7 +14,6 @@ import matplotlib.pyplot as PLT
 
 import matplotlib_setup
 
-import csvtools as CSV
 from utils import keypress
 
 class CSVProxy(object):
@@ -112,7 +111,7 @@ class Plot(object):
 
     # it is entirely possible to end up with more than 255 characters, which
     # is more than any FS currently in use supports, so we truncate the
-    # middle. 
+    # middle.
     maxlen = 128
     if len(filename) >= maxlen:
       middle = '_TRUNCATED_'
@@ -239,7 +238,6 @@ class Plot(object):
   def plot(self):
     csvfiles = self.csvfiles
     title = self.title
-    comment_title = self.comment_title
 
     fig = self._fig
     ax = self._ax
@@ -269,49 +267,10 @@ class Plot(object):
       ax.set_ylim(ylim)
 
     for csvidx in xrange(len(csvfiles)):
+      from data_loader import DataLoader
       csvfile = csvfiles[csvidx]
       print 'Plotting',csvfile
-
-      csv = None
-      if csvfile.endswith('csv'):
-        csv = CSV.CSVReader(csvfile)
-
-      if csvfile.endswith('trc'):
-        from lecroy import LecroyBinaryWaveform
-        bwave = LecroyBinaryWaveform(csvfile)
-        csv = bwave
-        csv.csv_source = 'LECROYWR104Xi_binary'
-
-      if csvfile.endswith('.npz'):
-        npzfile = np.load(csvfile)
-        if 'source' in npzfile:
-          source = npzfile['source'].item()
-        else:
-          source = None
-
-        if csvfile.endswith('.power.npz'):
-          data = npzfile['data']
-          header = npzfile['header'].item()
-          csv.csv_source = 'calc_power_spectrum.py'
-
-        if source == 'wzextract.py':
-          data = npzfile['data']
-          header = npzfile['header'].item()
-
-        if source == 'average_traces.py':
-          data = npzfile['data']
-          header = npzfile['header'].item()
-
-        if type(header) is dict:
-          import json
-          header = json.dumps(header, indent=1, sort_keys=True)
-
-        csv = CSVProxy()
-        csv.mat = data
-        csv.comments = [header]
-        csv.csv_source = source
-
-      assert csv is not None, 'Could not read CSV file %s'%(csvfile)
+      data = DataLoader(csvfile)
 
       pathcomponents = op.abspath(csvfile).split(op.sep)
       filespec = op.sep.join(pathcomponents[-4:])
@@ -320,25 +279,22 @@ class Plot(object):
 
       headers += ['# File: '+filespec]
       if self._single:
-        headers.extend(csv.comments)
-
-      if csvidx == 0 and comment_title and len(title) == 0:
-        title = csv.get_comment(csvfile, 'Comment')
+        headers.extend(data.header)
 
       if self.labels is not None:
         lbl = self.labels[csvidx]
       else:
         lbl = None
 
-      xvec = csv.mat[:,0]
-      yvec = csv.mat[:,1]
+      xvec = data.matrix[:,0]
+      yvec = data.matrix[:,1]
 
-      if csv.csv_source == 'SIOS':
+      if data.source == 'SIOS':
         tvec = csv.mat[:,3]
       else:
         tvec = None
 
-      if csv.csv_source == 'calc_power_spectrum.py':
+      if data.source == 'calc_power_spectrum.py':
         xvec /= 1000
         self.logy = True
 
@@ -367,25 +323,8 @@ class Plot(object):
     if self.logy == True:
       ax.set_yscale('log')
 
-    def _xylabel_by_source():
-      source = csv.csv_source
-      ret = 'X LABEL', 'Y LABEL'
-      if source is not None:
-        if source == 'SIOS':
-          ret = 'Z Position (mm)', 'Fluoresence (V)'
+    xlabel, ylabel = data.xy_labels
 
-        if source.startswith('LECROY'):
-          ret = 'Time (seconds)', 'Y LABEL (V)'
-
-        if source == 'calc_power_spectrum.py':
-          ret = 'Frequency (KHz)', '$V^{\ 2}$'
-
-        if source == 'wzextract.py':
-          ret = 'Z position (um)', 'PMT Voltage (V)'
-
-      return ret
-
-    xlabel, ylabel = _xylabel_by_source()
     if self.xlabel is not None:
       xlabel = self.xlabel
     if self.ylabel is not None:
@@ -458,7 +397,6 @@ def get_commandline_parser():
   parser = argparse.ArgumentParser(description='GNUplot replacement plotter')
 
   parser.add_argument('-title', default='', help='Plot title')
-  parser.add_argument('-comment_title', action='store_true', help='If given, the comment of the first csv file will be used as plot title. This is ignored if title is given.')
 
   parser.add_argument('-linestyle', default=None, help='If given, the plot will be rendered using the given matplotlib linestyle')
 
