@@ -39,7 +39,7 @@ def get_meta(datafile):
                   height=wrange,
                   w=scandata.w,
                   instrument='SIOS',
-                  original=datafile,
+                  source_file=datafile,
                   zlim=zlim,
                   wlim=wlim,
                   starttime=ctime(tstart),
