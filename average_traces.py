@@ -12,7 +12,7 @@ import dphil_paths
 def main(**kwargs):
   npzfilevec = kwargs['npzfiles']
 
-  yvec_sum = None
+  yveclist = list()
   xvec0 = None
 
   print 'Averaging traces %s ... %s'%(npzfilevec[0], npzfilevec[-1])
@@ -32,18 +32,18 @@ def main(**kwargs):
 
       assert len(xvec0) == len(xvec)
 
-      if yvec_sum is None:
-        yvec_sum = yvec
-      else:
-        yvec_sum += yvec
+      yveclist.append(yvec)
 
       import sys
       sys.stdout.write('.')
   print('')
 
-  avg_yvec = yvec_sum / len(npzfilevec)
+  ymatrix = np.column_stack(yveclist)
 
-  outmat = np.column_stack((xvec0, avg_yvec))
+  yvec_mean = np.mean(ymatrix, 1)
+  yvec_std = np.std(ymatrix, 1)
+
+  outmat = np.column_stack((xvec0, yvec_mean, yvec_std))
 
   outputfile = '%s__%s.average.npz'%(npzfilevec[0], npzfilevec[-1])
   np.savez(outputfile, data=outmat, header=dict(inputs=npzfilevec), source='average_traces.py')
