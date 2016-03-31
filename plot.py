@@ -105,6 +105,11 @@ class Plot(object):
         filename = startfile + suffix
       else:
         endfile = op.splitext(op.basename(csvfiles[-1]))[0]
+        # assuming these are SIOS scans, which they most likely are, then we
+        # only need the first 7 + 3 + 1 = 11 characters to unique identify
+        # the file
+        endfile = endfile[:11]
+
         filename = startfile+'__'+endfile+suffix
     else:
       filename += suffix
@@ -319,17 +324,18 @@ class Plot(object):
         xvec /= 1000
         self.logy = True
 
-      if self._kwargs.get('register_on_ymax', False):
+      if self.register_on_ymax:
         maxidx = np.argmax(yvec)
         xvec -= xvec[maxidx]
 
-      if self._kwargs.get('sub_x0', False):
+      if self.sub_x0:
         xvec -= xvec[0]
 
-      xvec *= self.xmultiplier
-
-      if self._kwargs.get('sub_y0', False):
+      if self.sub_y0:
         yvec -= yvec[0]
+
+      xvec *= self.xmultiplier
+      yvec *= self.ymultiplier
 
       if self.normalise:
         yrange = yvec.max() - yvec.min()
@@ -426,12 +432,13 @@ def get_commandline_parser():
   parser.add_argument('-x0', type=float, default=None, help='Value to use as x=0 when displaying positions on the x-axis. ')
   parser.add_argument('-no_debug', action='store_true', help='If given, file comments and filenames will not be added to plots.')
 
-  parser.add_argument('-sub_y0', action='store_true', help='If given, the first y value is subtracted from all y values')
   parser.add_argument('-sub_x0', action='store_true', help='If given, the first x value is subtracted from all x values')
+  parser.add_argument('-sub_y0', action='store_true', help='If given, the first y value is subtracted from all y values')
 
   parser.add_argument('-register_on_ymax', action='store_true', help='If given, the x value at which y is maximum will be subtracted from all x value, effectively putting the maximum y value at x=0')
 
-  parser.add_argument('-xmultiplier', type=float, default=1, help='Value to multiplu x by before plotting')
+  parser.add_argument('-xmultiplier', type=float, default=1, help='Value to multiplu x by before plotting. This happens after sub_x0.')
+  parser.add_argument('-ymultiplier', type=float, default=1, help='Value to multiplu y by before plotting. This happens after sub_y0.')
 
   parser.add_argument('-pdf', action='store_true', default=False, help='Plot will be saved to PDF instead of being shown')
   parser.add_argument('-png', action='store_true', default=False, help='Plot will be saved to PNG instead of being shown')
