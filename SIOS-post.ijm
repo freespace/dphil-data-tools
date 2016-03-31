@@ -54,7 +54,7 @@ macro "SIOS Post Action Tool - C000De9C000C111D3cD51D76D86C111D67D68D97D98C111D7
 
 	Dialog.create("SIOS Post Options");
 	Dialog.addChoice("Add Filename", newArray("Yes", "No"));
-	Dialog.addChoice("Add Colourbar", newArray("Yes", "No"));
+	Dialog.addChoice("Add Colourbar", newArray("No", "Yes"));
 	Dialog.addChoice("Consistent min/max", newArray("Yes", "No"));
 	Dialog.show();
 
