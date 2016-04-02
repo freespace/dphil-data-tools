@@ -134,17 +134,22 @@ def convert(datafile, noadjust):
                   adjusted=not noadjust,
                   comments=scandata.comments)
 
-  from os.path import splitext, extsep
-  name,ext = splitext(datafile)
-  outfile = name + extsep + 'tif'
+  from os.path import splitext, extsep, basename
+  name, ext = splitext(datafile)
+  outfile = basename(name) + extsep + 'tif'
 
-  from tifffile import imsave
   def tojson(obj):
     from json import dumps
     return dumps(obj, sort_keys=True, indent=2, separators=(',', ': '))
 
+  imarray = np.asarray(im.getdata(), np.uint16)
+  imarray = np.reshape(imarray, (im.size[1], im.size[0], 1))
+
+  assert imarray.shape[:2] == im.size[::-1]
+
+  from tifffile import imsave
   imsave(outfile,
-         np.asarray(im),
+         imarray,
          description=tojson(metadata),
          resolution=(10*1000/pw, 10*1000/ph),
          # 296 is the resolution_unit tag. This sets the resolution unit to cm
@@ -159,6 +164,7 @@ def main(**kwargs):
   datafiles = kwargs['datafiles']
 
   for datafile in datafiles:
+    print 'Converting',datafile
     convert(datafile, noadjust)
 
 def parse_commandline_arguments():
