@@ -80,18 +80,23 @@ class Plot(object):
   def _get_save_to_filename(self, ext):
     filename = self.filename
     csvfiles = self.csvfiles
-    suffix = ''
+    suffix = list()
     if self.normalise:
-      suffix += 'NR'
+      suffix.append('NR')
     if self.sub_y0:
-      suffix += 'Y0'
+      suffix.append('SUBY0')
     if self.sub_x0:
-      suffix += 'X0'
+      suffix.append('SUBX0')
     if self.register_on_ymax:
-      suffix += 'REGYMAX'
+      suffix.append('REGYMAX')
+    if self.ymultiplier != 1.0:
+      suffix.append('YMULT')
 
     if len(suffix):
-      suffix = '-'+suffix
+      suffix = '-'.join(suffix)
+      suffix = '-' + suffix
+    else:
+      suffix = ''
     suffix += '.'+ext
 
     if filename is None:
