@@ -294,7 +294,7 @@ class Plot(object):
       ax.set_ylim(ylim)
 
     for csvidx in xrange(len(csvfiles)):
-      from data_loader import DataLoader
+      from dataloader import DataLoader
       csvfile = csvfiles[csvidx]
       print 'Plotting',csvfile
       data = DataLoader(csvfile)

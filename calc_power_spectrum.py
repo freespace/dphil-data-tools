@@ -119,8 +119,8 @@ if __name__ == '__main__':
 
   for inputfile in cmdargs['inputfiles']:
     p('Loading %s'%(inputfile))
-    from data_loader import DataLoader
-    data = DataLoader(inputfile)
+    from dataloader import DataLoader
+    data = DataLoader(inputfile, glob_pattern=cmdargs['glob'])
 
     tvec = data.matrix[:,0]
     xvec = data.matrix[:,1]
