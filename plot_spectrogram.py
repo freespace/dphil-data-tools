@@ -42,7 +42,8 @@ def _process_data(data, header):
 
   return freqvec, powervec, trigtime
 
-def _data_generator(powerfilevec):
+def _data_generator(powerfilevec, **cmdargs):
+  head_skip = cmdargs['head_skip']
   ismerged = len(powerfilevec) == 1
   if ismerged:
     print 'Processing merged frequency power data'
@@ -51,13 +52,14 @@ def _data_generator(powerfilevec):
     print '\t%d merged files'%(len(filenamelist))
     filenamelist.sort()
 
-    for fname in filenamelist:
+    for fname in filenamelist[head_skip:]:
       datadict = npz[fname].item()
       data = datadict['data']
       header = datadict['header']
       yield(fname, data, header)
   else:
-    for pfile in powerfilevec:
+    powerfilevec.sort()
+    for pfile in powerfilevec[head_skip:]:
       npz = np.load(pfile)
       npzfile = np.load(pfile)
       data = npzfile['data']
@@ -82,7 +84,7 @@ def plot_spectrogram(**cmdargs):
   # contains 2-tuple of (trigger time, power spectrum)
   powerspecvec = list()
   spec_count = 0
-  for pfile, data, header in _data_generator(powerfilevec):
+  for pfile, data, header in _data_generator(powerfilevec, **cmdargs):
     freqvec, powervec, trigtime = _process_data(data, header)
     spec_count += 1
     # enforce the condition that power spectrums are monotically into the
@@ -206,6 +208,8 @@ def get_commandline_parser():
   parser.add_argument('-binsize', type=int, default=1, help='Perform binning with the given bin size. Bin size does not have to be a integer divisor of the number of samples')
 
   parser.add_argument('-pdf', action='store_true', default=False, help='Plot will be saved to PDF instead of being shown')
+
+  parser.add_argument('-head_skip', type=int, default=0, help='Number of files to skip before head of the queue. Files will be sorted before skip is applied')
 
   parser.add_argument('powerfiles', nargs='+', help='.power.npz files produced by calc_power_spectrum.py')
 
