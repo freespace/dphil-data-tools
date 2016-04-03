@@ -8,7 +8,6 @@ power spectrum in the bin, and power at each frequency is the mean power at
 each frequency of the power spectrums in the bin.
 """
 
-import os.path as op
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -26,6 +25,49 @@ def savefig(fig, *args, **kwargs):
 
   print 'Plot saved to file:',args[0]
 
+def _process_data(data, header):
+  # we delibrately ignore the DC signal, b/c it is very small
+  # and messes up our plotting when logged
+  freqvec = data[1:,0]
+  powervec = data[1:,1]
+
+  trigtimestr = header['trigtime']
+
+  from datetime import datetime
+  # really should standardise on a datetime format, e.g. ISO 8601. However
+  # python is unlikely to change how str(datetime) works so this is probably
+  # ok for now.
+  trigtime = datetime.strptime(trigtimestr, '%Y-%m-%d %H:%M:%S.%f')
+
+
+  return freqvec, powervec, trigtime
+
+def _data_generator(powerfilevec):
+  ismerged = len(powerfilevec) == 1
+  if ismerged:
+    print 'Processing merged frequency power data'
+    npz = np.load(powerfilevec[0])
+    filenamelist = npz.keys()
+    print '\t%d merged files'%(len(filenamelist))
+    filenamelist.sort()
+
+    for fname in filenamelist:
+      datadict = npz[fname].item()
+      data = datadict['data']
+      header = datadict['header']
+      yield(fname, data, header)
+  else:
+    for pfile in powerfilevec:
+      npz = np.load(pfile)
+      npzfile = np.load(pfile)
+      data = npzfile['data']
+      header = npzfile['header'].item()
+      if type(header) == str:
+        import json
+        header = json.loads(header)
+
+      yield (pfile, data, header)
+
 def plot_spectrogram(**cmdargs):
   powerfilevec = cmdargs['powerfiles']
   binsize = cmdargs['binsize']
@@ -39,33 +81,15 @@ def plot_spectrogram(**cmdargs):
   lastrigtime = None
   # contains 2-tuple of (trigger time, power spectrum)
   powerspecvec = list()
-  for pfile in powerfilevec:
-    npzfile = np.load(pfile)
-    data = npzfile['data']
-
-    # we delibrately ignore the DC signal, b/c it is very small
-    # and messes up our plotting when logged
-    freqvec = data[1:,0]
-    powervec = data[1:,1]
-
-    headerjson = npzfile['header'].item()
-
-    import json
-    metadata = json.loads(headerjson)
-    trigtimestr = metadata['trigtime']
-
-    from datetime import datetime
-    # really should standardise on a datetime format, e.g. ISO 8601. However
-    # python is unlikely to change how str(datetime) works so this is probably
-    # ok for now.
-    trigtime = datetime.strptime(metadata['trigtime'], '%Y-%m-%d %H:%M:%S.%f')
-
+  spec_count = 0
+  for pfile, data, header in _data_generator(powerfilevec):
+    freqvec, powervec, trigtime = _process_data(data, header)
+    spec_count += 1
     # enforce the condition that power spectrums are monotically into the
     # future
     if lastrigtime is not None:
       assert trigtime > lastrigtime, pfile
     lastrigtime = trigtime
-
     if binpower is None:
       binpower = powervec
       bintrigtime = trigtime
@@ -82,6 +106,13 @@ def plot_spectrogram(**cmdargs):
       binpower = None
       bincount = 0
 
+    if (spec_count+1)%10 == 0:
+      import sys
+      sys.stdout.write('.')
+      sys.stdout.flush()
+
+  print ''
+
   # if the last bin is not full it will not have been added, so do it now
   if binpower is not None:
     powerspecvec.append((bintrigtime, binpower/bincount))
@@ -93,7 +124,7 @@ def plot_spectrogram(**cmdargs):
   freqstart = freqvec0[0]/1e6
   freqend = freqvec0[-1]/1e6
 
-  print 'Binned %d power spectrums into %d bins'%(len(powerfilevec), len(powerspecvec))
+  print 'Binned %d power spectrums into %d bins'%(spec_count, len(powerspecvec))
   print '   Time: %s --> %s'%(tstart, tend)
 
   spectrogram = np.column_stack(map(lambda x:x[1], powerspecvec))
@@ -142,7 +173,7 @@ def plot_spectrogram(**cmdargs):
       fig.canvas.mpl_connect('key_press_event', keypress)
 
     plt.show()
-  
+
     # bring the window to front
     cfm = plt.get_current_fig_manager()
     cfm.window.activateWindow()
@@ -150,11 +181,16 @@ def plot_spectrogram(**cmdargs):
 
   else:
     import os.path as op
-    firstlast = (powerfilevec[0], powerfilevec[-1])
-    firstlast = map(op.basename,firstlast)
-    firstlast = map(lambda x:op.splitext(x)[0],firstlast)
+    if len(powerfilevec) > 1:
+      firstlast = (powerfilevec[0], powerfilevec[-1])
+      firstlast = map(op.basename,firstlast)
+      firstlast = map(lambda x:op.splitext(x)[0],firstlast)
 
-    pdffile = '%s__%s-spectrogram.pdf'%(firstlast[0], firstlast[1])
+      pdffile = '%s__%s-spectrogram.pdf'%(firstlast[0], firstlast[1])
+    else:
+      fname, _ = op.splitext(powerfilevec[0])
+      fname = op.basename(fname)
+      pdffile = '%s-spectrogram.pdf'%(fname)
 
     f = plt.figure(plt.get_fignums()[0])
     f.set_size_inches(16, 9)
