@@ -32,6 +32,16 @@ Both start_time and exposure_duration support the use of suffixes:
 
 e.g. 3u specifies 3e-6.
 
+Merged NPZ
+==========
+
+When -merge is used, the output is a single NPZ file containing. Each filename
+becomes a key, and under the key is stored a dictionary containing the keys:
+
+  - header: a dictionary containing metadata
+  - source: string identifying the source of the data
+  - data: numpy array
+
 """
 
 import numpy as np
@@ -77,6 +87,9 @@ def get_commandline_parser():
   parser.add_argument('inputfiles', nargs='+', help='Files to compute the power spectrum for')
   parser.add_argument('-npz', action='store_true', help='If given output will be .power.npz instead of csv')
   parser.add_argument('-suffix', type=str, default='', help='If given output will be added to file name just before .power')
+  parser.add_argument('-merge', action='store_true', help='If given, output will be merged into a single npz')
+  parser.add_argument('-glob', type=str, default='*', help='If input is a zip file, this is a unix shell glob pattern to match files for processing')
+
   return parser
 
 def parse_number(s):
@@ -101,71 +114,113 @@ def parse_number(s):
 
     return number
 
-if __name__ == '__main__':
-  parser = get_commandline_parser()
-  cmdargs = parse_commandline_arguments()
+import sys
+def p(s):
+  sys.stderr.write(s)
+  sys.stderr.write('\n')
 
-  import sys
-  def p(s):
-    sys.stderr.write(s)
-    sys.stderr.write('\n')
-
-  from csvtools import CSVReader
-  from os.path import splitext, extsep
-
+def _process_data(inputfile, tvec, yvec, trigtime, **cmdargs):
   start_time = parse_number(cmdargs['start_time'])
   exposure_duration = parse_number(cmdargs['exposure_duration'])
   end_time = start_time + exposure_duration
 
-  for inputfile in cmdargs['inputfiles']:
-    p('Loading %s'%(inputfile))
-    from dataloader import DataLoader
-    data = DataLoader(inputfile, glob_pattern=cmdargs['glob'])
+  nsamples = len(tvec)
 
-    tvec = data.matrix[:,0]
-    xvec = data.matrix[:,1]
-    if data.source == 'LECROYWR104Xi_binary':
-      trigtime = data.source_obj.TRIG_TIME
+  windowmask = np.logical_and(tvec >= start_time, tvec < end_time)
+
+  tvec = tvec[windowmask]
+  yvec = yvec[windowmask]
+
+  windownsamples = len(tvec)
+  windowpc = 100.0*windownsamples/nsamples
+  p('\tWindow: %.2f us --> %.2f us'%(tvec[0]*1e6, tvec[-1]*1e6))
+  p('\t%d samples in window, %d samples total, (%.2f%%)'%(windownsamples, nsamples, windowpc))
+
+  fs = 1.0/(tvec[1]-tvec[0])
+
+  p('\tProcessing at %.2f MHz sampling frequency'%(fs/1e6))
+  freqs, ps = calc_power_spectrum(yvec, fs)
+
+  # extracted only the one sided spectrum
+  onesidedmask = freqs >= 0
+  freqs = freqs[onesidedmask]
+  ps = ps[onesidedmask]
+
+  metadata = dict(input_file=inputfile,
+                  sampling_freq=fs,
+                  window=(start_time,end_time),
+                  trigtime=str(trigtime))
+  outmat = np.column_stack((freqs, ps))
+
+  datadict = dict(data=outmat, header=metadata, source='calc_power_spectrum.py')
+  return datadict
+
+def _loadtrc(fname, fcontent):
+  p('Loading %s'%(fname))
+  from dataloader import DataLoader
+  data = DataLoader(fname, fcontent)
+  tvec = data.matrix[:, 0]
+  yvec = data.matrix[:, 1]
+  if data.source == 'LECROYWR104Xi_binary':
+    trigtime = data.source_obj.TRIG_TIME
+  else:
+    trigtime = None
+
+  return tvec, yvec, trigtime
+
+def _generate_data(inputfilelist, glob):
+  iszip = inputfilelist[0].endswith('zip')
+
+  if iszip:
+    from zipfile import ZipFile
+    import fnmatch
+    zf = ZipFile(inputfilelist[0])
+    filenamelist = fnmatch.filter(zf.namelist(), glob)
+    for filename in filenamelist:
+      filecontent = zf.read(filename)
+      tvec, yvec, trigtime = _loadtrc(filename, filecontent)
+      yield filename, tvec, yvec, trigtime
+  else:
+    for inputfile in inputfilelist:
+      tvec, yvec, trigtime = _loadtrc(inputfile)
+      yield inputfile, tvec, yvec, trigtime
+
+if __name__ == '__main__':
+  parser = get_commandline_parser()
+  cmdargs = parse_commandline_arguments()
+  should_merge = cmdargs['merge']
+
+  mergedict = dict()
+  suffix = cmdargs['suffix']
+
+  from os.path import splitext, extsep, basename
+  inputfilelist = cmdargs['inputfiles']
+  for datatuple in _generate_data(inputfilelist, cmdargs['glob']):
+    datadict = _process_data(*datatuple, **cmdargs)
+
+    if should_merge:
+      mergedict[datatuple[0]] = datadict
     else:
-      trigtime = None
+      filename, _ = splitext(inputfile)
+      filename = basename(filename)
+      outputfile = filename + suffix + extsep + OUTPUT_EXT
 
-    nsamples = len(tvec)
+      if cmdargs['npz']:
+        np.savez(outputfile, **datadict)
+        p('\tWrote power spectrum to %s.npz'%(outputfile))
+      else:
+        import json
+        header = json.dumps(datadict['header'])
+        outmat = datadict['data']
+        np.savetxt(outputfile, outmat, delimiter=' ', header=header)
+        p('\tWrote power spectrum to %s'%(outputfile))
 
-    windowmask = np.logical_and(tvec >= start_time, tvec < end_time)
+  if should_merge:
+      filename0, _ = splitext(inputfilelist[0])
+      filenamelast, _ = splitext(inputfilelist[-1])
+      filename0, filenamelast = map(basename, (filename0, filenamelast))
+      outputfile = filename0 + '__' + filenamelast + suffix + extsep + OUTPUT_EXT
 
-    tvec = tvec[windowmask]
-    xvec = xvec[windowmask]
+      np.savez(outputfile, **mergedict)
+      p('Saved merged data to %s.npz'%(outputfile))
 
-    windownsamples = len(tvec)
-    windowpc = 100.0*windownsamples/nsamples
-    p('\tWindow: %.2f us --> %.2f us'%(tvec[0]*1e6, tvec[-1]*1e6))
-    p('\t%d samples in window, %d samples total, (%.2f%%)'%(windownsamples, nsamples, windowpc))
-
-    fs = 1.0/(tvec[1]-tvec[0])
-
-    p('\tProcessing at %.2f MHz sampling frequency'%(fs/1e6))
-    freqs, ps = calc_power_spectrum(xvec, fs)
-
-    # extracted only the one sided spectrum
-    onesidedmask = freqs >= 0
-    freqs = freqs[onesidedmask]
-    ps = ps[onesidedmask]
-
-    filename, ext = splitext(inputfile)
-    suffix = cmdargs['suffix']
-    outputfile = filename + suffix + extsep + OUTPUT_EXT
-
-    metadata = dict(input_file=inputfile,
-                    sampling_freq=fs,
-                    window=(start_time,end_time),
-                    trigtime=str(trigtime))
-    import json
-    outmat = np.column_stack((freqs, ps))
-
-    if cmdargs['npz']:
-      np.savez(outputfile, data=outmat, header=metadata, source='calc_power_spectrum.py')
-      p('\tWrote power spectrum to %s.npz'%(outputfile))
-    else:
-      header = json.dumps(metadata, indent=1, sort_keys=True)
-      np.savetxt(outputfile, outmat, delimiter=' ', header=header)
-      p('\tWrote power spectrum to %s'%(outputfile))
