@@ -119,21 +119,15 @@ if __name__ == '__main__':
 
   for inputfile in cmdargs['inputfiles']:
     p('Loading %s'%(inputfile))
+    from data_loader import DataLoader
+    data = DataLoader(inputfile)
 
-    if inputfile.endswith('csv'):
-      p('  CSV')
-      reader = CSVReader(inputfile)
-      mat = reader.mat
-      tvec = mat[:,0]
-      xvec = mat[:,1]
+    tvec = data.matrix[:,0]
+    xvec = data.matrix[:,1]
+    if data.source == 'LECROYWR104Xi_binary':
+      trigtime = data.source_obj.TRIG_TIME
+    else:
       trigtime = None
-    elif inputfile.endswith('trc'):
-      p('  Lecroy')
-      from lecroy import LecroyBinaryWaveform
-      bwf = LecroyBinaryWaveform(inputfile)
-      tvec = bwf.mat[:,0]
-      xvec = bwf.mat[:,1]
-      trigtime = bwf.TRIG_TIME
 
     nsamples = len(tvec)
 
