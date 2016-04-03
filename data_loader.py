@@ -8,11 +8,25 @@ class DataLoader(object):
   """
   _datafilepath = None
 
+  # data matrix
+  matrix = None
+
+  # string identifying the source of the data
+  source = None
+
+  # object representing the source data, if any
+  source_obj = None
+
+  # metadata etc as a string, which is sometimes a JSON
+  # string
+  header = ''
+
   def __init__(self, datafilepath):
     self._datafilepath = datafilepath
 
     matrix = None
     source = None
+    source_obj = None
     header = ''
 
     if datafilepath.endswith('csv'):
@@ -27,6 +41,7 @@ class DataLoader(object):
       bwave = LecroyBinaryWaveform(datafilepath)
       matrix = bwave.mat
       source = 'LECROYWR104Xi_binary'
+      source_obj = bwave
 
     if datafilepath.endswith('.npz'):
       npzfile = np.load(datafilepath)
@@ -59,6 +74,7 @@ class DataLoader(object):
     self.matrix = matrix
     self.header = header
     self.source = source
+    self.source_obj = source_obj
 
   @property
   def xy_labels(self):
