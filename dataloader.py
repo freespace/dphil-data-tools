@@ -21,7 +21,22 @@ class DataLoader(object):
   # string
   header = ''
 
-  def __init__(self, datafilepath):
+  def __init__(self, datafilepath, file_content=None):
+    """
+    Creates a data loader for the given file. The resulting object
+    will expose:
+      - matrix: numpy array
+      - source: string identifying source of the data, determined from content
+                and extension of datafilepath
+      - header: data metadata as a string, which maybe a JSON string.
+      - source_obj: an object representing the data, which may provide
+                   additional information. This may be None
+
+    datafilepath: path to the datafile
+    file_content: content of the file. If given no attempt will be made to load
+                 the file from disk
+    """
+
     self._datafilepath = datafilepath
 
     matrix = None
@@ -29,22 +44,27 @@ class DataLoader(object):
     source_obj = None
     header = ''
 
+    if file_content:
+      toload = file_content
+    else:
+      toload = datafilepath
+
     if datafilepath.endswith('csv'):
       import csvtools
-      csv = csvtools.CSVReader(datafilepath)
+      csv = csvtools.CSVReader(toload)
       matrix = csv.mat
       source = csv.csv_source
       header = csv.header
 
     if datafilepath.endswith('trc'):
       from lecroy import LecroyBinaryWaveform
-      bwave = LecroyBinaryWaveform(datafilepath)
+      bwave = LecroyBinaryWaveform(datafilepath, file_content)
       matrix = bwave.mat
       source = 'LECROYWR104Xi_binary'
       source_obj = bwave
 
     if datafilepath.endswith('.npz'):
-      npzfile = np.load(datafilepath)
+      npzfile = np.load(toload)
       if 'source' in npzfile:
         source = npzfile['source'].item()
       else:
