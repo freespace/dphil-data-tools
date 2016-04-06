@@ -197,16 +197,17 @@ if __name__ == '__main__':
   inputfilelist = cmdargs['inputfiles']
   for datatuple in _generate_data(inputfilelist, cmdargs['glob']):
     datadict = _process_data(*datatuple, **cmdargs)
+    inputfile = datatuple[0]
 
     if should_merge:
-      mergedict[datatuple[0]] = datadict
+      mergedict[inputfile] = datadict
     else:
       filename, _ = splitext(inputfile)
       filename = basename(filename)
       outputfile = filename + suffix + extsep + OUTPUT_EXT
 
       if cmdargs['npz']:
-        np.savez(outputfile, **datadict)
+        np.savez_compressed(outputfile, **datadict)
         p('\tWrote power spectrum to %s.npz'%(outputfile))
       else:
         import json
@@ -216,11 +217,16 @@ if __name__ == '__main__':
         p('\tWrote power spectrum to %s'%(outputfile))
 
   if should_merge:
+    if len(inputfilelist) > 1:
       filename0, _ = splitext(inputfilelist[0])
       filenamelast, _ = splitext(inputfilelist[-1])
       filename0, filenamelast = map(basename, (filename0, filenamelast))
-      outputfile = filename0 + '__' + filenamelast + suffix + extsep + OUTPUT_EXT
+      name = filename0 + '__' + filenamelast
+    else:
+      name = basename(inputfilelist[0])
 
-      np.savez(outputfile, **mergedict)
-      p('Saved merged data to %s.npz'%(outputfile))
+    outputfile = name + '-' + suffix + extsep + OUTPUT_EXT
+
+    np.savez_compressed(outputfile, **mergedict)
+    p('Saved merged data to %s.npz'%(outputfile))
 
