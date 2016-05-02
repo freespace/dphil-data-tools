@@ -50,6 +50,8 @@ def _data_generator(powerfilevec, **cmdargs):
     npz = np.load(powerfilevec[0])
     filenamelist = npz.keys()
     print '\t%d merged files'%(len(filenamelist))
+    print '\t%d will be skipped'%(head_skip)
+
     filenamelist.sort()
 
     for fname in filenamelist[head_skip:]:
@@ -73,6 +75,7 @@ def _data_generator(powerfilevec, **cmdargs):
 def plot_spectrogram(**cmdargs):
   powerfilevec = cmdargs['powerfiles']
   binsize = cmdargs['binsize']
+  max_bins = cmdargs['max_bins']
 
   binpower = None
   bincount = 0
@@ -81,6 +84,7 @@ def plot_spectrogram(**cmdargs):
   freqvec0 = None
 
   lastrigtime = None
+  starttime = None
   # contains 2-tuple of (trigger time, power spectrum)
   powerspecvec = list()
   spec_count = 0
@@ -91,7 +95,12 @@ def plot_spectrogram(**cmdargs):
     # future
     if lastrigtime is not None:
       assert trigtime > lastrigtime, pfile
+
+    if starttime is None:
+      starttime = trigtime
+
     lastrigtime = trigtime
+
     if binpower is None:
       binpower = powervec
       bintrigtime = trigtime
@@ -108,6 +117,9 @@ def plot_spectrogram(**cmdargs):
       binpower = None
       bincount = 0
 
+      if max_bins is not None and len(powerspecvec) >= max_bins:
+        break
+
     if (spec_count+1)%10 == 0:
       import sys
       sys.stdout.write('.')
@@ -119,6 +131,9 @@ def plot_spectrogram(**cmdargs):
   if binpower is not None:
     powerspecvec.append((bintrigtime, binpower/bincount))
 
+  # sort by trigger time
+  powerspecvec.sort(key=lambda x:x[0])
+
   tstart = powerspecvec[0][0]
   tend = powerspecvec[-1][0]
 
@@ -126,13 +141,16 @@ def plot_spectrogram(**cmdargs):
   freqstart = freqvec0[0]/1e6
   freqend = freqvec0[-1]/1e6
 
-  print 'Binned %d power spectrums into %d bins'%(spec_count, len(powerspecvec))
-  print '   Time: %s --> %s'%(tstart, tend)
+  print 'Binned %d power spectrums into %d bins of size %d'%(spec_count, len(powerspecvec), binsize)
+  print '   Duration: %s (%s --> %s)'%(tend - tstart, tstart, tend)
+  if max_bins is not None:
+    print '   Max bins =', max_bins
 
   spectrogram = np.column_stack(map(lambda x:x[1], powerspecvec))
 
   tduration = tend - tstart
-  tdurationsecs = tduration.total_seconds()
+  from math import ceil
+  tdurationsecs = ceil(tduration.total_seconds()/30)*30
 
   plt.imshow(spectrogram,
              aspect='auto',
@@ -146,10 +164,15 @@ def plot_spectrogram(**cmdargs):
              )
 
   textvec = ['File: %s'%(powerfilevec[0])]
-  textvec.append('File: %s'%(powerfilevec[-1]))
+  if len(powerfilevec) > 1:
+    textvec.append('File: %s'%(powerfilevec[-1]))
+
   textvec.append('cmap=%s'%(cmdargs['cmap']))
+
   if binsize > 1:
     textvec[-1] += ' binsize=%d'%(binsize)
+
+  textvec.append('start_time=%s'%(starttime))
 
   plt.text(0.1, 0.1, '\n'.join(textvec))
 
@@ -160,7 +183,12 @@ def plot_spectrogram(**cmdargs):
 
   # SIOS takes scans every 30 s, so lets have 30 s tics
   plt.xticks(np.arange(0, tdurationsecs+1, min(30, tdurationsecs/4)))
-  plt.title(cmdargs.get('title', ''))
+  fntsize = 'large'
+  title = cmdargs.get('title')
+  if len(title) > 60:
+    fntsize = 'medium'
+
+  plt.title(title, size=fntsize)
 
   cbar = plt.colorbar()
   cbar.set_label('$log(V^2)$')
@@ -205,11 +233,12 @@ def get_commandline_parser():
   parser.add_argument('-title', default='', help='Plot title')
   parser.add_argument('-cmap', default='seismic', help='Matplotlib colormap to use, defaults to "jet"')
 
-  parser.add_argument('-binsize', type=int, default=1, help='Perform binning with the given bin size. Bin size does not have to be a integer divisor of the number of samples')
+  parser.add_argument('-binsize', type=int, default=5, help='Perform binning with the given bin size. Bin size does not have to be a integer divisor of the number of samples')
 
+  parser.add_argument('-max_bins', type=int, default=None, help='Plot no more than this number of bins')
   parser.add_argument('-pdf', action='store_true', default=False, help='Plot will be saved to PDF instead of being shown')
 
-  parser.add_argument('-head_skip', type=int, default=0, help='Number of files to skip before head of the queue. Files will be sorted before skip is applied')
+  parser.add_argument('-head_skip', type=int, default=0, help='Number of files to skip before head of the queue. Files will be sorted before skip is applied. Negative values are allowed, in which case it turns into tail skip')
 
   parser.add_argument('powerfiles', nargs='+', help='.power.npz files produced by calc_power_spectrum.py')
 
