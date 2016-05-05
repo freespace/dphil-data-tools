@@ -1,12 +1,7 @@
 #!/bin/bash
 
-pdffile="$1"
-if [ -z "$pdffile" ]; then
-  echo 'Usage: $0 <pdf file> [<pdf file>...]'
-  exit 1;
-fi
-
 function pdf2png {
+  pdffile="$1"
   pngfile="$(echo "$pdffile" | sed 's/pdf$/png/')"
 
   echo "Converting $pdffile to png..."
