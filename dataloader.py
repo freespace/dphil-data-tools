@@ -21,6 +21,9 @@ class DataLoader(object):
   # string
   header = ''
 
+  # labels for the x and y axys
+  xy_labels = None
+
   def __init__(self, datafilepath, file_content=None):
     """
     Creates a data loader for the given file. The resulting object
@@ -43,6 +46,7 @@ class DataLoader(object):
     source = None
     source_obj = None
     header = ''
+    xylabel = 'X LABEL', 'Y LABEL'
 
     if file_content:
       toload = file_content
@@ -62,6 +66,7 @@ class DataLoader(object):
       matrix = bwave.mat
       source = 'LECROYWR104Xi_binary'
       source_obj = bwave
+      xylabel = 'Time (seconds)', 'Voltage (V)'
 
     if datafilepath.endswith('.npz'):
       npzfile = np.load(toload)
@@ -75,14 +80,21 @@ class DataLoader(object):
         header = npzfile['header'].item()
         if source is None:
           source = 'calc_power_spectrum.py'
+        xylabel =  'Frequency (KHz)', '$V^{\ 2}$'
 
       if source == 'wzextract.py':
         matrix = npzfile['data']
         header = npzfile['header'].item()
+        xylabel = 'Z position (um)', 'PMT Voltage (V)'
 
       if source == 'average_traces.py':
         matrix = npzfile['data']
         header = npzfile['header'].item()
+
+      if source == 'integrate_power_spectrum.py':
+        matrix = npzfile['data']
+        header = npzfile['header'].item()
+        xylabel = 'Time (s)', 'Energy ($V^{\ 2}$)'
 
       if type(header) is dict:
         import json
@@ -95,22 +107,4 @@ class DataLoader(object):
     self.header = header
     self.source = source
     self.source_obj = source_obj
-
-  @property
-  def xy_labels(self):
-    source = self.source
-    ret = 'X LABEL', 'Y LABEL'
-    if source is not None:
-      if source == 'SIOS':
-        ret = 'Z Position (mm)', 'Fluoresence (V)'
-
-      if source.startswith('LECROY'):
-        ret = 'Time (seconds)', 'Y LABEL (V)'
-
-      if source == 'calc_power_spectrum.py':
-        ret = 'Frequency (KHz)', '$V^{\ 2}$'
-
-      if source == 'wzextract.py':
-        ret = 'Z position (um)', 'PMT Voltage (V)'
-
-    return ret
+    self.xy_labels = xylabel
