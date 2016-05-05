@@ -31,8 +31,13 @@ def get_meta(datafile):
   zlim = (zvec[0], zvec[-1])
   wlim = (wvec[0], wvec[-1])
 
-  tstart = scandata.zscandatavec[0][1].starttime
-  tend = scandata.zscandatavec[-1][1].endtime
+  firstzscan = scandata.zscandatavec[0][1]
+  lastzscan = scandata.zscandatavec[-1][1]
+
+  tstart = firstzscan.starttime
+  tend = lastzscan.endtime
+  xstartpos_um = firstzscan.xpos_um
+  ystartpos_um = lastzscan.ypos_um
 
   from time import ctime
   metadata = dict(width=zrange,
@@ -45,7 +50,9 @@ def get_meta(datafile):
                   starttime=ctime(tstart),
                   endtime=ctime(tend),
                   wstep=wvec[1]-wvec[0],
-                  comments=scandata.comments)
+                  comments=scandata.comments,
+                  xstart_um=xstartpos_um,
+                  ystart_um=ystartpos_um)
   return metadata
 
 def print_meta(datafile):
