@@ -149,8 +149,7 @@ def plot_spectrogram(**cmdargs):
   spectrogram = np.column_stack(map(lambda x:x[1], powerspecvec))
 
   tduration = tend - tstart
-  from math import ceil
-  tdurationsecs = ceil(tduration.total_seconds()/30)*30
+  tdurationsecs = tduration.total_seconds()
 
   plt.imshow(spectrogram,
              aspect='auto',
