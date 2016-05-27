@@ -52,7 +52,11 @@ def get_meta(datafile):
                   wstep=wvec[1]-wvec[0],
                   comments=scandata.comments,
                   xstart_um=xstartpos_um,
-                  ystart_um=ystartpos_um)
+                  ystart_um=ystartpos_um,
+                  shape=pix.shape,
+                  PMT_control_voltage = firstzscan.PMTvoltagestart,
+                  LD_current = firstzscan.LDcurrentstart,
+                  )
   return metadata
 
 def print_meta(datafile):
