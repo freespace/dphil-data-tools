@@ -7,6 +7,8 @@ Since this script is intended for mywork there are certain presets which may
 or may not be useful to a general user.
 """
 
+from __future__ import division
+
 import os.path as op
 
 import numpy as np
@@ -306,7 +308,7 @@ class Plot(object):
 
       headers += ['# File: '+filespec]
       if self._single:
-        headers.extend(data.header)
+        headers.append(data.header)
 
       if self.labels is not None:
         lbl = self.labels[csvidx]
@@ -351,6 +353,15 @@ class Plot(object):
 
       if self.normalise:
         ax.hlines(0.5, xvec.min(), xvec.max(), linestyles='dotted', colors=['gray'])
+
+      if self.fwhm:
+        from stats import get_stats
+        sdict = get_stats(xvec, yvec, asdict=True)
+        FWHM = sdict['FWHM']
+        fstart, fend = sdict['FWHM_x']
+        hm = yvec.max()/2
+        ax.hlines(hm, fstart, fend, linewidth=4, linestyles='solid', colors=['black'])
+        ax.text((fstart+fend)/2, hm*0.9, '%.2f'%(FWHM), size=11, ha='center')
 
     if self.logy == True:
       ax.set_yscale('log')
@@ -467,6 +478,7 @@ def get_commandline_parser():
   parser.add_argument('-vgrid', action='store_true', default=False, help='If given, vertical grid will be added.')
   parser.add_argument('-grid', action='store_true', default=False, help='If given, vertical grid will be added.')
 
+  parser.add_argument('-fwhm', action='store_true', default=False, help='If given, FWHM will be computed and plotted.')
   parser.add_argument('-figsize', type=float, nargs=2, default=None, help='If given, the figure size will be set as given, in inches')
 
   parser.add_argument('-interp', action='store_true', default=False, help='If given, each series will be interpolated using a cubic')
