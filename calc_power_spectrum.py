@@ -225,7 +225,7 @@ if __name__ == '__main__':
     else:
       name = basename(inputfilelist[0])
 
-    outputfile = name + '-' + suffix + extsep + OUTPUT_EXT
+    outputfile = name + suffix + extsep + OUTPUT_EXT
 
     np.savez_compressed(outputfile, **mergedict)
     p('Saved merged data to %s.npz'%(outputfile))
