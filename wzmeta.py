@@ -39,6 +39,12 @@ def get_meta(datafile):
   xstartpos_um = firstzscan.xpos_um
   ystartpos_um = lastzscan.ypos_um
 
+  LD_current_v = firstzscan.LDcurrentstart
+
+  # pg 19 of LDC2xxC manual
+  kctl_out = -10 / 200e-3
+  LD_current = LD_current_v / kctl_out
+
   from time import ctime
   metadata = dict(width=zrange,
                   height=wrange,
@@ -54,8 +60,8 @@ def get_meta(datafile):
                   xstart_um=xstartpos_um,
                   ystart_um=ystartpos_um,
                   shape=pix.shape,
-                  PMT_control_voltage = firstzscan.PMTvoltagestart,
-                  LD_current = firstzscan.LDcurrentstart,
+                  PMT_control_voltage_mV = firstzscan.PMTvoltagestart*1e3,
+                  LD_current_mA = LD_current*1e3,
                   )
   return metadata
 
