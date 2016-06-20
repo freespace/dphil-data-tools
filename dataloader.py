@@ -96,6 +96,11 @@ class DataLoader(object):
         header = npzfile['header'].item()
         xylabel = 'Time (s)', 'Energy ($V^{\ 2}$)'
 
+      if source == 'savgol.py':
+        matrix = npzfile['data']
+        header = npzfile['header'].item()
+        xylabel = 'Z Position (um)', 'PMT Voltage (V)'
+
       if type(header) is dict:
         import json
         header = json.dumps(header, indent=1, sort_keys=True)
