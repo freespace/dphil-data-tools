@@ -15,42 +15,40 @@ def find_width(xvec, yvec, ytarget):
   where yvec is greater than ytarget.
 
   The distance returned is defined to be the distance between the first point of
-  two points to the left of the maximum y value that is below ytarget, and the
-  first of 2 points to the right of the same that is below ytarget. This method
+  3 points to the left of the maximum y value that is below ytarget, and the
+  first of 3 points to the right of the same that is below ytarget. This method
   avoids some issues with noisy data.
 
   returns the width, xstart, xend
   """
-  def interp(x1,y1,x2,y2):
-    rise = y2-y1
-    run = x2-x1
-    grad = rise/run
-
-    dy = ytarget - y1
-    return x1+run*dy/rise
-
   idx_of_max = yvec.argmax()
 
   start = None
   end = None
 
+  def ylookahead(startidx, steps):
+    endidx = startidx + steps
+    if endidx < startidx:
+      startidx,endidx = endidx, startidx
+    for idx in xrange(startidx, endidx):
+      if yvec[idx] > ytarget:
+        return False
+    return True
+
   # get left position
   idx = idx_of_max
-  while idx > 0:
-    if yvec[idx] <= ytarget and yvec[idx-1] <= ytarget:
-      start = interp(
-          xvec[idx], yvec[idx],
-          xvec[idx+1], yvec[idx+1])
+  lookahead = 3
+  while idx > lookahead-1:
+    if ylookahead(idx, -3):
+      start = xvec[idx]
       break
     idx -= 1
 
-  #get right position
+  # get right position
   idx = idx_of_max
-  while idx < yvec.size-1:
-    if yvec[idx] <= ytarget and yvec[idx+1] <= ytarget:
-      end = interp(
-          xvec[idx], yvec[idx],
-          xvec[idx+1], yvec[idx+1])
+  while idx < yvec.size-lookahead-1:
+    if ylookahead(idx, 3):
+      end = xvec[idx]
       break
     idx += 1
 
@@ -85,7 +83,7 @@ def get_stats(xvec, yvec, noauc=False, asdict=False):
   FWHM is calculated by finding the "half maximum" as 0.5*(peak+mode), the
   width is calculated by finding the left and right edges, where each edge
   is found by scanning the values from the left and right until the y value
-  is above the half maximum. some interpolation is done.
+  is above the half maximum.
   """
 
   stdev = np.std(yvec)
@@ -147,6 +145,7 @@ def print_stats(**kwargs):
   if csv_out:
     print ',',
   else:
+    print 'statistics:'
     print ' '*lblwidth,
 
   colheaders = ['Max', 'Min', 'Median', 'Mean', 'Stdev', 'AUC', 'FWHM', 'Mode']
@@ -218,6 +217,13 @@ if __name__ == '__main__':
   parser.add_argument('csvfiles', nargs='+', type=str, help='CSV files to compute statistics for')
 
   args = vars(parser.parse_args())
+
+  if args.get('csv_out') and args.get('yindex') is None:
+    import sys
+    warning = 'Warning: csv_out specified but yindex is not!'
+    sys.stderr.write('\n' + '*'*len(warning) + '\n')
+    sys.stderr.write(warning)
+    sys.stderr.write('\n' + '*'*len(warning) + '\n\n')
 
   for csvfile in args['csvfiles']:
     args['csvfile'] = csvfile
