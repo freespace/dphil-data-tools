@@ -22,7 +22,8 @@ def filter_one(npzfile, yindex, windowsize, order):
 
   mat = np.column_stack((xvec, filteredyvec))
 
-  fname = npzfile.rsplit('.', 1)[0]
+  from os.path import basename, splitext
+  fname = splitext(basename(npzfile))[0]
   outnpz = fname + '_savgol.npz'
   header = {'source_file':npzfile,
             'window_size':windowsize,
