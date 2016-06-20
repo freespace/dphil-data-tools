@@ -24,7 +24,7 @@ class CSVProxy(object):
   csv_source = None
 
 import itertools
-linestyles = ['-', '-o', '-d', '-s', '-*', '-x']
+linestyles = ['-', '-.', '--', ':', '-*', '-_']
 linecolors = ['b', 'g', 'r', 'c', 'm', 'orange', 'k']
 linespecs = list(itertools.product(linestyles, linecolors))
 linespec_idx = 0
