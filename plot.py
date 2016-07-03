@@ -243,7 +243,7 @@ class Plot(object):
 
     ls, lc = _next_linespec()
     if self.linestyle:
-      ls = self.linestyle
+      ls = self.linestyle.strip()
 
     # make errorbar color more transparent so we can see the actual data
     from matplotlib import colors
@@ -267,6 +267,7 @@ class Plot(object):
   def plot(self):
     csvfiles = self.csvfiles
     title = self.title
+    title = title.replace('\\n', '\n')
 
     fig = self._fig
     ax = self._ax
@@ -315,8 +316,8 @@ class Plot(object):
       else:
         lbl = None
 
-      xvec = data.matrix[:,0]
-      yvec = data.matrix[:,1]
+      xvec = data.matrix[:,self.xcolumn-1]
+      yvec = data.matrix[:,self.ycolumn-1]
 
       yerr = None
       if data.matrix.shape[1] >= 3 and self.no_errorbar == False:
@@ -459,6 +460,9 @@ def get_commandline_parser():
   parser.add_argument('-pdf', action='store_true', default=False, help='Plot will be saved to PDF instead of being shown')
   parser.add_argument('-png', action='store_true', default=False, help='Plot will be saved to PNG instead of being shown')
   parser.add_argument('-filename', default=None, type=str, help='Name of output file to write to. Defaults to name of the first and last csv file joined by double underscore (__)')
+
+  parser.add_argument('-xcolumn', type=int, default=1, help='Column (1..) to use for x axis')
+  parser.add_argument('-ycolumn', type=int, default=2, help='colunm (1..) to use for y axis')
 
   parser.add_argument('-xlabel', type=str, help='X label.')
   parser.add_argument('-ylabel', type=str, help='Y label.')
