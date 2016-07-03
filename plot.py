@@ -24,9 +24,10 @@ class CSVProxy(object):
   csv_source = None
 
 import itertools
-linestyles = ['-', '-.', '--', ':', '-*', '-_']
+linestyles = ['-', '--', '-.', ':']
+markerstyles = ['o', 'v','^', 's', 'p', '*', 'h', 'H', '+', 'x', 'D']
 linecolors = ['b', 'g', 'r', 'c', 'm', 'orange', 'k']
-linespecs = list(itertools.product(linestyles, linecolors))
+linespecs = list(itertools.product(linestyles, linecolors, markerstyles))
 linespec_idx = 0
 
 def reset_linespec():
@@ -241,7 +242,7 @@ class Plot(object):
     if lbl is not None:
       l = lbl
 
-    ls, lc = _next_linespec()
+    ls, lc, marker = _next_linespec()
     if self.linestyle:
       ls = self.linestyle.strip()
 
@@ -258,6 +259,7 @@ class Plot(object):
                       ynew,
                       linestyle=ls,
                       color=lc,
+                      marker=marker,
                       label=l,
                       yerr=yerr,
                       ecolor=ecolor,
