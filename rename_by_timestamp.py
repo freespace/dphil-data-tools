@@ -38,7 +38,7 @@ def timestampcmp(a, b):
     parts = parts[1:-1]
 
     for p in parts:
-      if filter(str.isdigit, p) == p:
+      if filter(str.isdigit, p) == p and len(p):
         return int(p)
 
     return 999
