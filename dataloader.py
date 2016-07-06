@@ -58,7 +58,7 @@ class DataLoader(object):
       csv = csvtools.CSVReader(toload)
       matrix = csv.mat
       source = csv.csv_source
-      header = csv.header
+      header = csv.column_headers
 
     if datafilepath.endswith('trc'):
       from lecroy import LecroyBinaryWaveform
@@ -101,9 +101,12 @@ class DataLoader(object):
         header = npzfile['header'].item()
         xylabel = 'Z Position (um)', 'PMT Voltage (V)'
 
-      if type(header) is dict:
-        import json
-        header = json.dumps(header, indent=1, sort_keys=True)
+    if header is None:
+      header =''
+
+    if type(header) in (dict, list):
+      import json
+      header = json.dumps(header, indent=1, sort_keys=True)
 
     assert matrix is not None
     assert type(header) == str
