@@ -25,6 +25,7 @@ def get_meta(datafile):
   zrange = zvec.max() - zvec.min()
 
   pix = scandata.matrix
+  pixsum = np.sum(pix)
   maxv = max(pix.flatten())
   minv = min(pix.flatten())
 
@@ -37,7 +38,7 @@ def get_meta(datafile):
   tstart = firstzscan.starttime
   tend = lastzscan.endtime
   xstartpos_um = firstzscan.xpos_um
-  ystartpos_um = lastzscan.ypos_um
+  ystartpos_um = firstzscan.ypos_um
 
   LD_current_v = firstzscan.LDcurrentstart
 
@@ -62,6 +63,7 @@ def get_meta(datafile):
                   shape=pix.shape,
                   PMT_control_voltage_mV = firstzscan.PMTvoltagestart*1e3,
                   LD_current_mA = LD_current*1e3,
+                  matrix_sum=pixsum
                   )
   return metadata
 
