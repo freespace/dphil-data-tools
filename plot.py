@@ -84,16 +84,27 @@ class Plot(object):
     filename = self.filename
     csvfiles = self.csvfiles
     suffix = list()
+
     if self.normalise:
       suffix.append('NR')
+
     if self.sub_y0:
       suffix.append('SUBY0')
+
     if self.sub_x0:
       suffix.append('SUBX0')
+
     if self.register_on_ymax:
       suffix.append('REGYMAX')
+
     if self.ymultiplier != 1.0:
       suffix.append('YMULT')
+
+    if self.ylim is not None:
+      suffix.append('%.2fY%.2f'%(self.ylim[0], self.ylim[1]))
+
+    if self.xlim is not None:
+      suffix.append('%.2fX%.2f'%(self.xlim[0], self.xlim[1]))
 
     if len(suffix):
       suffix = '-'.join(suffix)
@@ -322,7 +333,7 @@ class Plot(object):
       yvec = data.matrix[:,self.ycolumn-1]
 
       yerr = None
-      if data.matrix.shape[1] >= 3 and self.no_errorbar == False:
+      if self.ycolumn < data.matrix.shape[1] and self.no_errorbar == False:
         yerr = data.matrix[:,2]
 
       if data.source == 'SIOS':
