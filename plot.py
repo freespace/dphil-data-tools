@@ -257,6 +257,9 @@ class Plot(object):
     if self.linestyle:
       ls = self.linestyle.strip()
 
+    if self.markerstyle:
+      marker = self.markerstyle.strip()
+
     # make errorbar color more transparent so we can see the actual data
     from matplotlib import colors
     ecolor = colors.colorConverter.to_rgba(lc, 0.5)
@@ -455,7 +458,8 @@ def get_commandline_parser():
 
   parser.add_argument('-title', default='', help='Plot title')
 
-  parser.add_argument('-linestyle', default=None, help='If given, the plot will be rendered using the given matplotlib linestyle')
+  parser.add_argument('-linestyle', default=None, help='If given, the plot will be rendered using the given matplotlib line style')
+  parser.add_argument('-markerstyle', default=None, help='If given, the plot will be rendered using the given matplotlib marker style')
 
   parser.add_argument('-show_start_time', action='store_true', help='If given, the time of the first csv file will be shown as a label in the top-right.')
   parser.add_argument('-t0', type=float, default=None, help='Value to use as t=0 when displaying time points on the x-axis.')
