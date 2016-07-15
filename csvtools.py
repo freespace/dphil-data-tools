@@ -164,7 +164,7 @@ class CSVReader(object):
 
     # lazy load mat, b/c sometimes we just want the header
     if self._mat is None:
-      loaders = (_load, _load_liberal, _load_SIOS, _load_LECROYWR104Xi, _load_LECROYWS434)
+      loaders = (_load, _load_SIOS, _load_LECROYWR104Xi, _load_LECROYWS434, _load_liberal)
       mat = None
       exdict = dict()
       for loader in loaders:
