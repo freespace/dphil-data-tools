@@ -25,15 +25,23 @@ def _decode(listofbytes, nodropchars):
   string, otherwise they are silently dropped
   """
   # strings appear to be stored as windows-1252 across 2 bytes
-  listofbytes = map(int, listofbytes)
-  codes = [0xff&a|b<<8 for a,b in zip(listofbytes[0::2], listofbytes[1::2])]
-  ret = str()
-  for b in codes:
-    try:
-      ret += chr(b).decode('windows-1252')
-    except:
-      if nodropchars:
-        ret += '&#x%04x;'%(0xffff&b)
+  try:
+    listofbytes = map(int, listofbytes)
+    codes = [0xff&a|b<<8 for a,b in zip(listofbytes[0::2], listofbytes[1::2])]
+    ret = str()
+    for b in codes:
+      try:
+        ret += chr(b).decode('windows-1252')
+      except:
+        if nodropchars:
+          ret += '&#x%04x;'%(0xffff&b)
+  except:
+    if len(listofbytes):
+      print len(listofbytes)
+      ret = listofbytes
+    else:
+      ret = '##<no data>##'
+
   return ret
   
 def main(cmdargs):
@@ -49,7 +57,7 @@ def main(cmdargs):
     if cmdargs.dump_tags:
       if im.im.ifd.get(calibrationtag) is None:
         for tag in im.im.ifd.keys():
-          print '===== ' + str(tag) + ' ====='
+          print '===== tag' + str(tag) + ' ====='
           print d(im.im.ifd[tag])
           print ''
     else:
