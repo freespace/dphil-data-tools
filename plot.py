@@ -27,7 +27,7 @@ import itertools
 linestyles = ['-', '--', '-.', ':']
 markerstyles = ['o', 'v','^', 's', 'p', '*', 'h', 'H', '+', 'x', 'D']
 linecolors = ['b', 'g', 'r', 'c', 'm', 'orange', 'k']
-linespecs = list(itertools.product(linestyles, linecolors, markerstyles))
+linespecs = list(itertools.product(linestyles, markerstyles, linecolors))
 linespec_idx = 0
 
 def reset_linespec():
@@ -36,7 +36,8 @@ def reset_linespec():
 
 def _next_linespec():
   global linespec_idx
-  ls = linespecs[linespec_idx]
+  ls = list(linespecs[linespec_idx])
+  ls[1], ls[2] = ls[2], ls[1]
   linespec_idx = (linespec_idx+1)%len(linespecs)
   return ls
 
@@ -332,11 +333,11 @@ class Plot(object):
       else:
         lbl = None
 
-      xvec = data.matrix[:,self.xcolumn-1]
-      yvec = data.matrix[:,self.ycolumn-1]
+      xvec = data.matrix[:,self.xindex-1]
+      yvec = data.matrix[:,self.yindex-1]
 
       yerr = None
-      if self.ycolumn < data.matrix.shape[1] and self.no_errorbar == False:
+      if self.yindex < data.matrix.shape[1] and self.no_errorbar == False:
         yerr = data.matrix[:,2]
 
       if data.source == 'SIOS':
@@ -368,9 +369,6 @@ class Plot(object):
 
       self._plot_traces(lbl, xvec, yvec, tvec, yerr=yerr)
 
-      if self.normalise:
-        ax.hlines(0.5, xvec.min(), xvec.max(), linestyles='dotted', colors=['gray'])
-
       if self.fwhm:
         from stats import get_stats
         sdict = get_stats(xvec, yvec, asdict=True)
@@ -393,16 +391,17 @@ class Plot(object):
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
 
-    if self.labels is not None:
-      if len(self.labels) > 5:
-        fontsize = 8
-      else:
-        fontsize = 11
+    if self.no_legend == False:
+      if self.labels is not None:
+        if len(self.labels) > 5:
+          fontsize = 8
+        else:
+          fontsize = 11
 
-      ax.legend(
-          loc=self.legend_position,
-          ncol=1,
-          prop={'size':fontsize})
+        ax.legend(
+            loc=self.legend_position,
+            ncol=1,
+            prop={'size':fontsize})
 
     ax.set_title(title, size='medium')
     ax.set_autoscalex_on(False)
@@ -412,14 +411,22 @@ class Plot(object):
       ax.set_xlim(self.xlim)
 
     yaxis = ax.get_yaxis()
+    xaxis = ax.get_xaxis()
+
+    ylim = yaxis.get_view_interval()
+    xlim = xaxis.get_view_interval()
+
     if self.hgrid or self.grid:
       yaxis.grid()
-    ylim = yaxis.get_view_interval()
 
-    xaxis = ax.get_xaxis()
-    #xlim = xaxis.get_view_interval()
     if self.vgrid or self.grid:
       xaxis.grid()
+
+    if self.vline is not None:
+      ax.vlines(self.vline, ylim[0], ylim[1], linestyles='solid', colors=['red'])
+
+    if self.normalise:
+      ax.hlines(0.5, xlim[0], xlim[1], linestyles='dotted', colors=['gray'])
 
     texttoplot = ['']
     # comments needs to be a list
@@ -478,14 +485,15 @@ def get_commandline_parser():
   parser.add_argument('-png', action='store_true', default=False, help='Plot will be saved to PNG instead of being shown')
   parser.add_argument('-filename', default=None, type=str, help='Name of output file to write to. Defaults to name of the first and last csv file joined by double underscore (__)')
 
-  parser.add_argument('-xcolumn', type=int, default=1, help='Column (1..) to use for x axis')
-  parser.add_argument('-ycolumn', type=int, default=2, help='colunm (1..) to use for y axis')
+  parser.add_argument('-xindex', type=int, default=1, help='Index of column (1..) to use for x axis')
+  parser.add_argument('-yindex', type=int, default=2, help='Index of colunm (1..) to use for y axis')
 
   parser.add_argument('-xlabel', type=str, help='X label.')
   parser.add_argument('-ylabel', type=str, help='Y label.')
 
   parser.add_argument('-legend_position', type=str, default='upper right', help='Matplotlib position to put the legend, defaults to "upper right". Note this must be quoted')
   parser.add_argument('-labels', type=str, nargs='+', help='Labels for each series to use in the legend. There must be one label per serie.')
+  parser.add_argument('-no_legend', action='store_true', default=False, help='If given no legend will be plotted.')
 
   parser.add_argument('-normalise', action='store_true', default=False, help='If given, the y-values will be normalised to be between [0..1].')
 
@@ -498,6 +506,8 @@ def get_commandline_parser():
   parser.add_argument('-hgrid', action='store_true', default=False, help='If given, horizontal grid will be added.')
   parser.add_argument('-vgrid', action='store_true', default=False, help='If given, vertical grid will be added.')
   parser.add_argument('-grid', action='store_true', default=False, help='If given, vertical grid will be added.')
+
+  parser.add_argument('-vline', type=float, default=None, help='If given, a vertical line in red will be plotted at the specified x coordinate.')
 
   parser.add_argument('-fwhm', action='store_true', default=False, help='If given, FWHM will be computed and plotted.')
   parser.add_argument('-figsize', type=float, nargs=2, default=None, help='If given, the figure size will be set as given, in inches')
