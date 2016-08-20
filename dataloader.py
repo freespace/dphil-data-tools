@@ -75,6 +75,15 @@ class DataLoader(object):
       else:
         source = None
 
+      if source is None:
+        # assume this is from SIOS
+        source = 'SIOS'
+        scandata = npzfile['scandata'].item()
+        matrix = scandata.matrix
+        header = scandata.comments
+        xylabel = 'Z position (um)', '%s position (um)'%(scandata.w)
+        source_obj = scandata
+
       if datafilepath.endswith('.power.npz'):
         matrix = npzfile['data']
         header = npzfile['header'].item()
