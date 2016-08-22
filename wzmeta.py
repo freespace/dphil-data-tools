@@ -57,6 +57,7 @@ def get_meta(datafile):
                   starttime=ctime(tstart),
                   endtime=ctime(tend),
                   wstep=wvec[1]-wvec[0],
+                  zstep=zvec[1]-zvec[0],
                   comments=scandata.comments,
                   xstart_um=xstartpos_um,
                   ystart_um=ystartpos_um,
