@@ -255,11 +255,17 @@ class Plot(object):
       l = lbl
 
     ls, lc, marker = _next_linespec()
-    if self.linestyle:
-      ls = self.linestyle.strip()
+    if self.linestyles is not None:
+      if len(self.linestyles) == 1:
+        ls = self.linestyles[0].strip()
+      else:
+        ls = self.linestyles.pop(0).strip()
 
-    if self.markerstyle:
-      marker = self.markerstyle.strip()
+    if self.markerstyles is not None:
+      if len(self.markerstyles) == 1:
+        marker = self.markerstyles[0].strip()
+      else:
+        marker = self.markerstyles.pop(0).strip()
 
     # make errorbar color more transparent so we can see the actual data
     from matplotlib import colors
@@ -329,7 +335,10 @@ class Plot(object):
         headers.append(data.header)
 
       if self.labels is not None:
-        lbl = self.labels[csvidx]
+        if csvidx < len(self.labels):
+          lbl = self.labels[csvidx]
+        else:
+          lbl = self.labels[-1]
       else:
         lbl = None
 
@@ -465,8 +474,8 @@ def get_commandline_parser():
 
   parser.add_argument('-title', default='', help='Plot title')
 
-  parser.add_argument('-linestyle', default=None, help='If given, the plot will be rendered using the given matplotlib line style')
-  parser.add_argument('-markerstyle', default=None, help='If given, the plot will be rendered using the given matplotlib marker style')
+  parser.add_argument('-linestyles', nargs='+', default=None, help='If given, data series will be rendered using the specified linestyle. If number of series exceeds number of linestyles, then the last given linestyle will be used for the remaining series.')
+  parser.add_argument('-markerstyles', nargs='+', default=None, help='If given, data series will be rendered using the specified linestyle. If the number of series execeeds the number of markerstyles, then the last given markerstyle will be used for the remaining series')
 
   parser.add_argument('-show_start_time', action='store_true', help='If given, the time of the first csv file will be shown as a label in the top-right.')
   parser.add_argument('-t0', type=float, default=None, help='Value to use as t=0 when displaying time points on the x-axis.')
@@ -492,7 +501,7 @@ def get_commandline_parser():
   parser.add_argument('-ylabel', type=str, help='Y label.')
 
   parser.add_argument('-legend_position', type=str, default='upper right', help='Matplotlib position to put the legend, defaults to "upper right". Note this must be quoted')
-  parser.add_argument('-labels', type=str, nargs='+', help='Labels for each series to use in the legend. There must be one label per serie.')
+  parser.add_argument('-labels', type=str, nargs='+', help='Labels for each series to use in the legend. If there are not enough labels for series, then the last label is repeated.')
   parser.add_argument('-no_legend', action='store_true', default=False, help='If given no legend will be plotted.')
 
   parser.add_argument('-normalise', action='store_true', default=False, help='If given, the y-values will be normalised to be between [0..1].')
