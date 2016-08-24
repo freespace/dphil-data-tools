@@ -288,6 +288,9 @@ class Plot(object):
                       **self.plotkwargs)
 
   def plot(self):
+    """
+    This function is *wayyyyyy* too long
+    """
     csvfiles = self.csvfiles
     title = self.title
     title = title.replace('\\n', '\n')
@@ -309,8 +312,10 @@ class Plot(object):
       # shorten/truncate filenames in the legend if they are over 16
       # characters
       def shorten(s):
-        if len(s) > 24:
-          return s[:10]+'..'+s[-8:]
+        from os.path import splitext
+        s = splitext(s)[0]
+        if len(s) > 32:
+          return s[:10]+'..'+s[-16:]
         else:
           return s
       self.labels = map(shorten, self.labels)
@@ -320,6 +325,14 @@ class Plot(object):
       ax.set_ylim(ylim)
 
     for csvidx in xrange(len(csvfiles)):
+      if self.color_cycle_length is not None:
+        # the first +1 is to stop csvidx=0 from triggering even
+        # though it has no ill effect. The second +1 is because to
+        # have a cycle length of 3, e.g. 0,1,2 you need to reset
+        # on the 4, not 3
+        if (csvidx+1)%(self.color_cycle_length+1) == 0:
+          reset_linespec()
+
       from dataloader import DataLoader
       csvfile = csvfiles[csvidx]
       print 'Plotting',csvfile
@@ -476,7 +489,7 @@ def get_commandline_parser():
 
   parser.add_argument('-linestyles', nargs='+', default=None, help='If given, data series will be rendered using the specified linestyle. If number of series exceeds number of linestyles, then the last given linestyle will be used for the remaining series.')
   parser.add_argument('-markerstyles', nargs='+', default=None, help='If given, data series will be rendered using the specified linestyle. If the number of series execeeds the number of markerstyles, then the last given markerstyle will be used for the remaining series')
-
+  parser.add_argument('-color_cycle_length', type=int, default=None, help='If given, the colors will reset and cycle from the beginning every n data series')
   parser.add_argument('-show_start_time', action='store_true', help='If given, the time of the first csv file will be shown as a label in the top-right.')
   parser.add_argument('-t0', type=float, default=None, help='Value to use as t=0 when displaying time points on the x-axis.')
   parser.add_argument('-x0', type=float, default=None, help='Value to use as x=0 when displaying positions on the x-axis. ')
