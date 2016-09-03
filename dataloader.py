@@ -88,8 +88,6 @@ class DataLoader(object):
       if source == 'calc_power_spectrum.py':
         matrix = npzfile['data']
         header = npzfile['header'].item()
-        if source is None:
-          source = 'calc_power_spectrum.py'
         xylabel =  'Frequency (KHz)', '$V^{\ 2}$'
 
       if source == 'wzextract.py':
