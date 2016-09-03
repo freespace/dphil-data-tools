@@ -359,8 +359,8 @@ class Plot(object):
       yvec = data.matrix[:,self.yindex-1]
 
       yerr = None
-      if self.errorbar_index is not None:
-        yerr = data.matrix[:, self.errorbar_index-1]
+      if self.yerror_index is not None:
+        yerr = data.matrix[:, self.yerror_index-1]
 
       if data.source == 'SIOS':
         tvec = csv.mat[:,3]
@@ -520,7 +520,7 @@ def get_commandline_parser():
   parser.add_argument('-normalise', action='store_true', default=False, help='If given, the y-values will be normalised to be between [0..1].')
 
   parser.add_argument('-logy', action='store_true', default=False, help='If given, the y-axis will be log')
-  parser.add_argument('-errorbar_index', type=int, default=None, help='If given, errorbars will be plotted using data in the specified column (1..)')
+  parser.add_argument('-yerror_index', type=int, default=None, help='If given, errorbars will be plotted using data in the specified column (1..)')
 
   parser.add_argument('-ylim', type=float, nargs=2, default=None, help='If given, the y limits will be as given')
   parser.add_argument('-xlim', type=float, nargs=2, default=None, help='If given, the x limits will be as given')
