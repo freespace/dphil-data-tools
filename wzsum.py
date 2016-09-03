@@ -38,7 +38,7 @@ def main(**kwargs):
       pixarea_um = pixshape[0] * pixshape[1]
 
       # the above computation gives us a VERY big value, which
-      # makes the density, which is fluorescence per um^2 very, and
+      # makes the density, which is fluorescence per um^2 very small, and
       # this allows floating errors to creep in. Therefore, we divide
       # by 1e6 and convert from um^2 to mm^2
       pixarea_mm = pixarea_um / 1e6
