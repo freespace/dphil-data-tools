@@ -72,10 +72,20 @@ class DataLoader(object):
       npzfile = np.load(toload)
       if 'source' in npzfile:
         source = npzfile['source'].item()
+      elif 'scandata' in npzfile:
+        source = 'SIOS'
+      elif datafilepath.endswith('.power.npz'):
+        source = 'calc_power_spectrum.py'
       else:
         source = None
 
-      if datafilepath.endswith('.power.npz'):
+      if source == 'SIOS':
+        scandata = npzfile['scandata'].item()
+        matrix = scandata.matrix
+        header = scandata.comments
+        xylabel = 'Z Position (um)', '%s Position (um)'%(scandata.w)
+
+      if source == 'calc_power_spectrum.py':
         matrix = npzfile['data']
         header = npzfile['header'].item()
         if source is None:
@@ -85,7 +95,7 @@ class DataLoader(object):
       if source == 'wzextract.py':
         matrix = npzfile['data']
         header = npzfile['header'].item()
-        xylabel = 'Z position (um)', 'PMT Voltage (V)'
+        xylabel = 'Z Position (um)', 'PMT Voltage (V)'
 
       if source == 'average_traces.py':
         matrix = npzfile['data']
