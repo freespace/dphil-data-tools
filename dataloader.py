@@ -84,6 +84,7 @@ class DataLoader(object):
         matrix = scandata.matrix
         header = scandata.comments
         xylabel = 'Z Position (um)', '%s Position (um)'%(scandata.w)
+        source_obj = scandata
 
       if source == 'calc_power_spectrum.py':
         matrix = npzfile['data']
