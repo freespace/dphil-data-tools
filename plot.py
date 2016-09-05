@@ -52,7 +52,7 @@ class Plot(object):
       if self._fig is None:
         self._fig = PLT.figure()
 
-    # don't use the default kwarg of get to add subplot because
+    # don't use the default kwargs of get to add subplot because
     # order of evaluation is not guaranteed and it has side effects
     self._ax = kwargs.get('ax')
     if self._ax is None:
@@ -445,7 +445,8 @@ class Plot(object):
       xaxis.grid()
 
     if self.vline is not None:
-      ax.vlines(self.vline, ylim[0], ylim[1], linestyles='solid', colors=['red'])
+      for vl in self.vline:
+        ax.vlines(vl, ylim[0], ylim[1], linestyles='solid', colors=['red'])
 
     if self.normalise:
       ax.hlines(0.5, xlim[0], xlim[1], linestyles='dotted', colors=['gray'])
@@ -529,7 +530,7 @@ def get_commandline_parser():
   parser.add_argument('-vgrid', action='store_true', default=False, help='If given, vertical grid will be added.')
   parser.add_argument('-grid', action='store_true', default=False, help='If given, vertical grid will be added.')
 
-  parser.add_argument('-vline', type=float, default=None, help='If given, a vertical line in red will be plotted at the specified x coordinate.')
+  parser.add_argument('-vline', type=float, nargs='+', default=None, help='If given, a vertical line in red will be plotted at the specified x coordinate. Specify multiple x values to plot multiple lines.')
 
   parser.add_argument('-fwhm', action='store_true', default=False, help='If given, FWHM will be computed and plotted.')
   parser.add_argument('-figsize', type=float, nargs=2, default=None, help='If given, the figure size will be set as given, in inches')
