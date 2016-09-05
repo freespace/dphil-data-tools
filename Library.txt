@@ -34,20 +34,21 @@ function savewithlut(dir, filename, lut, lutext, includefilename, addcolourbar, 
   fontsize=10;
   setFont("SansSerif", fontsize, "bold");
 
-  if (addcolourbar) {
-    run("Calibration Bar...", "location=[Upper Right] fill=White label=Black number=5 decimal=0 font=8 zoom=0.8 overlay");
-  }
-
-  run("Scale Bar...", "width=500 height=4 font=8 color=White background=None location=[Lower Right] bold overlay");
-
-  run(lut);
-
   if (min != 0 || max != 0) {
     print("--> Setting min = " + min);
     print("--> Setting max = " + max);
     setMinAndMax(min, max);
   }
 
+  run("Calibrate...", "function=[Straight Line] unit=V text1=[0 65535] text2=[0 20]");
+
+  run(lut);
+
+  if (addcolourbar) {
+    run("Calibration Bar...", "location=[Upper Right] fill=White label=Black number=5 decimal=0.0 font=8 zoom=0.8 overlay");
+  }
+
+  run("Scale Bar...", "width=500 height=4 font=8 color=White background=None location=[Lower Right] bold hide overlay");
 
 
   if (includefilename) {
