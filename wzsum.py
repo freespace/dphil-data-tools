@@ -11,7 +11,7 @@ def main(**kwargs):
   datafiles = kwargs.pop('datafiles')
   scan_interval = kwargs.pop('scan_interval')
 
-  cols = ["Source Filename", "V. Section No.", "Total PMT Value", "Area (mm^2)", "PMT Density (total/area)"]
+  cols = ["Source Filename", "V. Section No.", "Total PMT Value (V)", "Area (mm^2)", "PMT Density (V/m^2)"]
   if scan_interval is not None:
     cols.append("Elapsed Time")
 
