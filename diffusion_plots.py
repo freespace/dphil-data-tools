@@ -28,6 +28,10 @@ def main(**kwargs):
   pdf = kwargs.pop('pdf')
   png = kwargs.pop('png')
   save_suffix = kwargs.pop('save_suffix')
+  PMT_coeff = kwargs.pop('PMT_coeff')
+
+  def get_matrix(obj):
+    return obj.matrix * PMT_coeff
 
   from dataloader import DataLoader
   nrows = 2
@@ -47,9 +51,10 @@ def main(**kwargs):
     if scanfile:
       loader = DataLoader(scanfile)
       scandata = loader.source_obj
+      scandata = loader.source_obj
       plt.contour(scandata.zpositionvec/1000,
             scandata.wpositionvec/1000,
-            loader.matrix,
+            get_matrix(scandata),
             levels=[DOX_30uM_V, DOX_50uM_V],
             colors=['g', 'b'])
       plt.xlabel('Z Position (mm)')
@@ -78,7 +83,7 @@ def main(**kwargs):
 
     loader = DataLoader(scanfile)
     scandata = loader.source_obj
-    mat = loader.matrix
+    mat = get_matrix(scandata)
     wavefront_z_proximal_vec = list()
     for rowidx in xrange(mat.shape[0]):
       row = mat[rowidx, :]
@@ -173,7 +178,7 @@ def main(**kwargs):
     scanfile = get_npz(scanID, scanidx)
     loader = DataLoader(scanfile)
     scandata = loader.source_obj
-    mat = loader.matrix
+    mat = get_matrix(scandata)
 
     zposvec = scandata.zpositionvec/1000
     xposvec = scandata.xpositionvec/1000
@@ -229,6 +234,7 @@ def get_commandline_parser():
   parser.add_argument('scanID', type=str, help='Scan ID of scan to produce plots for')
   parser.add_argument('-pdf', action='store_true', help='If given saves a copy of the plot as PDF without displaying it')
   parser.add_argument('-png', action='store_true', help='If given saves a copy of the plot as PNG without displaying it')
+  parser.add_argument('-PMT_coeff', type=float, default=1, help='Multiplies all PMT voltages by the specified coefficient')
   parser.add_argument('-save_suffix', type=str, default='', help='If given will be inserted just before .pdf or .png with a leading _')
 
   return parser
