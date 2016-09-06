@@ -49,7 +49,7 @@ def main(**kwargs):
 
       print '\t'.join(map(str, valuesvec))
 
-def get_sum(datafile, vdivide=1, vindex=None, pixel_height=1, pixel_width=1):
+def get_sum(datafile, vdivide=1, vindex=None, pixel_height=1, pixel_width=1, coeff=1):
   """
   Returns a list of (section-index, section-sum, section-shape) tuples, where
   sections are equal height divisions within an image. The number of sections
@@ -101,7 +101,7 @@ def get_sum(datafile, vdivide=1, vindex=None, pixel_height=1, pixel_width=1):
     shape = (section.shape[0] * pixel_height,
              section.shape[1] * pixel_width)
 
-    sectionstats.append((secidx, np.sum(section), shape))
+    sectionstats.append((secidx, coeff*np.sum(section), shape))
 
   return sectionstats
 
@@ -116,6 +116,7 @@ def get_commandline_parser():
   parser.add_argument('-vdivide', type=int, default=1, help='Divides the image vertically the specified number of times, outputting a sum for each section. Defaults to 1, equal to summing the whole image as one section')
   parser.add_argument('-vindex', type=int, default=None, help='If given in combination with vdivide, only the specified section (1...) will be summed.')
   parser.add_argument('-scan_interval', type=float, default=None, help='If given output will contain an additional column, Elapsed time, with a value for each scan of scan_interval*n, where n (0...) is index of the file amongst specified files')
+  parser.add_argument('-coeff', type=float, default=1, help='Multiplies the result by the given coefficient')
   parser.add_argument('datafiles', nargs='+', help='WZ data files')
 
   return parser
