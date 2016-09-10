@@ -11,8 +11,6 @@ import matplotlib.pyplot as plt
 
 import matplotlib_setup
 
-from utils import keypress
-
 import dphil_paths
 
 def plot_histo(axis, values, vline, with_labels=True, bins=50):
@@ -84,6 +82,7 @@ def get_commandline_parser():
   parser.add_argument('-threshold', type=float, default=0, help='Values below the threshold will be discarded')
   parser.add_argument('-inset_threshold', action='store_true', help='If given, thresholding will apply to a smaller inset histogram')
   parser.add_argument('-pdf', action='store_true', help='If given saves a copy of the plot as PDF without displaying it')
+  parser.add_argument('-pdf_suffix', type=str, default=None, help='If given will be inserted just before .pdf with a leading _')
 
   return parser
 
