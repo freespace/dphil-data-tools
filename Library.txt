@@ -20,7 +20,7 @@ function filterFilesByExtension(files, ext) {
   return Array.slice(accepted, 0, adx);
 }
 
-function savewithlut(dir, filename, lut, lutext, includefilename, addcolourbar, min, max) {
+function savewithlut(dir, filename, lut, lutext, includefilename, addcolourbar, min, max, label) {
   if (indexOf(filename, "nd2") >= 0) {
     run("Bio-Formats Windowless Importer", "open="+dir+filename);
     ext="nd2";
@@ -52,7 +52,9 @@ function savewithlut(dir, filename, lut, lutext, includefilename, addcolourbar, 
 
 
   if (includefilename) {
-    drawshadowedtext(namenoext, 0, fontsize);
+    drawshadowedtext(namenoext, 1, fontsize+1);
+  } else {
+    drawshadowedtext(label, 1, fontsize+1);
   }
 
   wait(400);
