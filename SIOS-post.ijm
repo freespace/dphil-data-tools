@@ -54,6 +54,7 @@ macro "SIOS Post Action Tool - C000De9C000C111D3cD51D76D86C111D67D68D97D98C111D7
 
 	Dialog.create("SIOS Post Options");
 	Dialog.addChoice("Add Filename", newArray("Yes", "No"));
+	Dialog.addChoice("Add Sequence #", newArray("No", "Yes"));
 	Dialog.addChoice("Add Colourbar", newArray("No", "Yes"));
 	Dialog.addChoice("Consistent min/max", newArray("Yes", "No"));
 	Dialog.show();
@@ -62,6 +63,11 @@ macro "SIOS Post Action Tool - C000De9C000C111D3cD51D76D86C111D67D68D97D98C111D7
 	if (Dialog.getChoice() == "Yes") {
 		addfilename = 1;
 	}
+
+  addsequence = 0;
+  if (Dialog.getChoice() == "Yes") {
+    addsequence = 1;
+  }
 
 	addcolourbar = 0;
 	if (Dialog.getChoice() == "Yes") {
@@ -93,8 +99,10 @@ macro "SIOS Post Action Tool - C000De9C000C111D3cD51D76D86C111D67D68D97D98C111D7
     showProgress(0.5+0.5*(idx+1)/tiffiles.length);
 		filename = tiffiles[idx];
     convertunit(dir, filename);
-    savewithlut(dir, filename, "Fire", "PNG", addfilename, addcolourbar, globalmin, globalmax);
-    savewithlut(dir, filename, "ICA", "PNG", addfilename, addcolourbar, globalmin, globalmax);
+    lbl = '';
+    if (addsequence) lbl = ''+idx;
+    savewithlut(dir, filename, "Fire", "PNG", addfilename, addcolourbar, globalmin, globalmax, lbl);
+    //savewithlut(dir, filename, "ICA", "PNG", addfilename, addcolourbar, globalmin, globalmax, lbl);
 	}
 
 	showMessage("Processing complete.");
