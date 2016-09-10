@@ -28,7 +28,7 @@ def main(files_to_organise, **kwargs):
   # key identifies which part of the file we should by, e.g. phantom ID
   key_set = set()
 
-  sort_by = filter(lambda x:x[1], kwargs.items())[0][0]
+  sort_by = filter(lambda x:x[1] if x[0].startswith('by_') else False, kwargs.items())[0][0]
   key_func, dir_func = func_table[sort_by]
   for fname in files_to_organise:
     key_set.add(key_func(os.path.basename(fname)))
@@ -39,7 +39,7 @@ def main(files_to_organise, **kwargs):
     print 'Organising key '+key
 
   # create a dir if needed
-    dirname = dir_func(key)
+    dirname = dir_func(key)+kwargs.get('dir_suffix')
     if os.path.exists(dirname):
       assert os.path.isdir(dirname)
       print '\tdir exists'
@@ -63,6 +63,8 @@ def get_commandline_parser():
   import argparse
   parser = argparse.ArgumentParser(description='Organises files produced in my data processing pipeline')
   parser.add_argument('files_to_organise', type=str, nargs='+', help='Files to organise')
+  parser.add_argument('-dir_suffix', type=str, default='', help='If given will be appended to generated directory names')
+
   g = parser.add_mutually_exclusive_group(required=True)
   g.add_argument('-by_phantom_id', action='store_true', help='Organises by phantom ID')
   g.add_argument('-by_LUT', action='store_true', help='Organises by look-up-table')
