@@ -65,10 +65,22 @@ def calc_power_spectrum(x, fs):
   as a two-tuple. Note that the two-sided power spectrum is
   returned, and the output has been normalised by the number
   elements in x.
+
+  Note that the output has units of [x]^2/fs aka [x]^2 * T
+  where T is the sampling period. This is because to get the
+  power of the time domain signal, you need to extract the
+  area under the curve, which means assuming the value sampled
+  at t is constant over the sampling period T (=1/fs).
+
+  Due to Parsvel's theorem, the power in the time domain (x^2*T)
+  must equal to the power in the frequency domain (X^2*T), so
+  we have to multiply by T(=1/fs) when we are done. If [x] is Volts
+  then we end up with the "expected" power unit V^2/Hz since we divide
+  by fs, the sampling frequency (which is equiv to multiplying by T).
   """
   x -= np.mean(x)
   X = np.fft.fft(x)
-  ps = np.abs(X)**2
+  ps = np.abs(X)**2 / fs
   freqs = np.fft.fftfreq(x.size, 1.0/fs)
   idx = np.argsort(freqs)
 
