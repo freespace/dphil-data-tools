@@ -6,12 +6,17 @@ stacking the power spectrum contained in each file.
 When binning is performed, the timestamp of a bin is the timestamp of the fist
 power spectrum in the bin, and power at each frequency is the mean power at
 each frequency of the power spectrums in the bin.
+
+Note that this used to produce spectrograms with a logged colourbar, but this is
+a bad idea b/c it sacrifices visibility of high power signals, which is what
+we are really interested in. So says Constatine, and I agree.
 """
 
 
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from matplotlib import gridspec
 
 import matplotlib_setup
 
@@ -76,6 +81,7 @@ def plot_spectrogram(**cmdargs):
   powerfilevec = cmdargs['powerfiles']
   binsize = cmdargs['binsize']
   max_bins = cmdargs['max_bins']
+  no_debug = cmdargs['no_debug']
 
   binpower = None
   bincount = 0
@@ -151,16 +157,22 @@ def plot_spectrogram(**cmdargs):
   tduration = tend - tstart
   tdurationsecs = tduration.total_seconds()
 
+  gs = gridspec.GridSpec(2, 1, height_ratios=[2,1])
+
+  plt.subplot(gs[0])
   plt.imshow(spectrogram,
              aspect='auto',
              interpolation='none',
              extent=[0, tdurationsecs, freqstart, freqend],
              cmap=cmdargs['cmap'],
-             norm=mpl.colors.LogNorm(), # logs the colour values
              origin = 'lower',          # put low freq near (0,0)
-             vmin=1e-7,
-             vmax=1,
+             vmin=spectrogram.min(),
+             # we use the 99th percentile here as otherwise a single high
+             # value will complete ruined the colourmap
+             vmax=np.percentile(spectrogram, 99),
              )
+
+  plt.ylabel('Frequency (MHz)')
 
   textvec = ['File: %s'%(powerfilevec[0])]
   if len(powerfilevec) > 1:
@@ -172,11 +184,8 @@ def plot_spectrogram(**cmdargs):
     textvec[-1] += ' binsize=%d'%(binsize)
 
   textvec.append('start_time=%s'%(starttime))
-
-  plt.text(0.1, 0.1, '\n'.join(textvec))
-
-  plt.xlabel('Time (s)')
-  plt.ylabel('Frequency (MHz)')
+  if not no_debug:
+    plt.text(0.1, 0.1, '\n'.join(textvec), color='0.5')
 
   plt.grid()
 
@@ -190,10 +199,30 @@ def plot_spectrogram(**cmdargs):
   plt.title(title, size=fntsize)
 
   cbar = plt.colorbar()
-  cbar.set_label('$log(V^2)$')
+  cbar.set_label('Power ($V^2/Hz$)')
 
+  ##############################################################################
+
+  total_power = map(lambda x:np.sum(x[1]), powerspecvec)
+  plt.subplot(gs[1])
+  dt = tdurationsecs/len(total_power)
+  tvec = np.arange(len(total_power)) * dt
+  plt.plot(tvec, total_power)
+  plt.xlim([0, tdurationsecs])
+  plt.xticks(np.arange(0, tdurationsecs+1, min(30, tdurationsecs/4)))
+
+  plt.xlabel('Time (s)')
+  plt.ylabel('Total Power ($V^2$)')
+
+  # add the same color bar as the top graph, then hide it so
+  # the top and bottom plot edges line up
+  cbar = plt.colorbar()
+  cbar.remove()
+
+  ##############################################################################
   savepdf = cmdargs['pdf']
-  shouldshow = not savepdf
+  savepng = cmdargs['png']
+  shouldshow = not savepdf and not savepng
 
   if shouldshow:
     for fignum in plt.get_fignums():
@@ -215,27 +244,37 @@ def plot_spectrogram(**cmdargs):
       firstlast = map(op.basename,firstlast)
       firstlast = map(lambda x:op.splitext(x)[0],firstlast)
 
-      pdffile = '%s__%s-spectrogram.pdf'%(firstlast[0], firstlast[1])
+      savefile = '%s__%s-spectrogram'%(firstlast[0], firstlast[1])
     else:
       fname, _ = op.splitext(powerfilevec[0])
       fname = op.basename(fname)
-      pdffile = '%s-spectrogram.pdf'%(fname)
+      savefile = '%s-spectrogram'%(fname)
 
     f = plt.figure(plt.get_fignums()[0])
+
+    # if we don't do this then the resulting plot isn't long enough to
+    # comfortably contain the x axis tick labels
     f.set_size_inches(16, 9)
-    savefig(f, pdffile)
+    if savepng:
+      savefig(f, savefile+'.png')
+    if savepdf:
+      savefig(f, savefile+'.pdf')
+
 
 def get_commandline_parser():
   import argparse
   parser = argparse.ArgumentParser(description='Plots spectrogram by combining individual power spectrums')
 
   parser.add_argument('-title', default='', help='Plot title')
-  parser.add_argument('-cmap', default='seismic', help='Matplotlib colormap to use, defaults to "jet"')
+  parser.add_argument('-cmap', default='jet', help='Matplotlib colormap to use, defaults to "jet"')
 
   parser.add_argument('-binsize', type=int, default=5, help='Perform binning with the given bin size. Bin size does not have to be a integer divisor of the number of samples')
 
   parser.add_argument('-max_bins', type=int, default=None, help='Plot no more than this number of bins')
   parser.add_argument('-pdf', action='store_true', default=False, help='Plot will be saved to PDF instead of being shown')
+  parser.add_argument('-png', action='store_true', default=False, help='Plot will be saved to PNG instead of being shown')
+
+  parser.add_argument('-no_debug', action='store_true', default=False, help='Debugging information at lower-left will not be plotted.')
 
   parser.add_argument('-head_skip', type=int, default=0, help='Number of files to skip before head of the queue. Files will be sorted before skip is applied. Negative values are allowed, in which case it turns into tail skip')
 
