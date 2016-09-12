@@ -68,9 +68,9 @@ def calc_power_spectrum(x, fs):
 
   Note that the output has units of [x]^2/fs aka [x]^2 * T
   where T is the sampling period. This is because to get the
-  power of the time domain signal, you need to extract the
-  area under the curve, which means assuming the value sampled
-  at t is constant over the sampling period T (=1/fs).
+  power of the time domain signal at the sampled time, you
+  assume that value is constant until the next sample, hence
+  multiplication by T (=1/fs).
 
   Due to Parsvel's theorem, the power in the time domain (x^2*T)
   must equal to the power in the frequency domain (X^2*T), so
