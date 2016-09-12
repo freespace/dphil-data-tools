@@ -82,6 +82,8 @@ def plot_spectrogram(**cmdargs):
   binsize = cmdargs['binsize']
   max_bins = cmdargs['max_bins']
   no_debug = cmdargs['no_debug']
+  power_only = cmdargs['power_only']
+  power_fit = cmdargs['power_fit']
 
   binpower = None
   bincount = 0
@@ -157,54 +159,56 @@ def plot_spectrogram(**cmdargs):
   tduration = tend - tstart
   tdurationsecs = tduration.total_seconds()
 
-  gs = gridspec.GridSpec(2, 1, height_ratios=[2,1])
+  if power_only:
+    gs = gridspec.GridSpec(1, 1)
+  else:
+    gs = gridspec.GridSpec(2, 1, height_ratios=[2,1])
 
-  plt.subplot(gs[0])
-  plt.imshow(spectrogram,
-             aspect='auto',
-             interpolation='none',
-             extent=[0, tdurationsecs, freqstart, freqend],
-             cmap=cmdargs['cmap'],
-             origin = 'lower',          # put low freq near (0,0)
-             vmin=spectrogram.min(),
-             # we use the 99th percentile here as otherwise a single high
-             # value will complete ruined the colourmap
-             vmax=np.percentile(spectrogram, 99),
-             )
+    plt.subplot(gs[0])
+    plt.imshow(spectrogram,
+               aspect='auto',
+               interpolation='none',
+               extent=[0, tdurationsecs, freqstart, freqend],
+               cmap=cmdargs['cmap'],
+               origin = 'lower',          # put low freq near (0,0)
+               vmin=spectrogram.min(),
+               # we use the 99th percentile here as otherwise a single high
+               # value will complete ruined the colourmap
+               vmax=np.percentile(spectrogram, 99),
+               )
 
-  plt.ylabel('Frequency (MHz)')
+    plt.ylabel('Frequency (MHz)')
 
-  textvec = ['File: %s'%(powerfilevec[0])]
-  if len(powerfilevec) > 1:
-    textvec.append('File: %s'%(powerfilevec[-1]))
+    textvec = ['File: %s'%(powerfilevec[0])]
+    if len(powerfilevec) > 1:
+      textvec.append('File: %s'%(powerfilevec[-1]))
 
-  textvec.append('cmap=%s'%(cmdargs['cmap']))
+    textvec.append('cmap=%s'%(cmdargs['cmap']))
 
-  if binsize > 1:
-    textvec[-1] += ' binsize=%d'%(binsize)
+    if binsize > 1:
+      textvec[-1] += ' binsize=%d'%(binsize)
 
-  textvec.append('start_time=%s'%(starttime))
-  if not no_debug:
-    plt.text(0.1, 0.1, '\n'.join(textvec), color='0.5')
+    textvec.append('start_time=%s'%(starttime))
+    if not no_debug:
+      plt.text(0.1, 0.1, '\n'.join(textvec), color='0.5')
 
-  plt.grid()
+    plt.grid()
 
-  # SIOS takes scans every 30 s, so lets have 30 s tics
-  plt.xticks(np.arange(0, tdurationsecs+1, min(30, tdurationsecs/4)))
-  fntsize = 'large'
-  title = cmdargs.get('title')
-  if len(title) > 60:
-    fntsize = 'medium'
+    # SIOS takes scans every 30 s, so lets have 30 s tics
+    plt.xticks(np.arange(0, tdurationsecs+1, min(30, tdurationsecs/4)))
+    fntsize = 'large'
+    title = cmdargs.get('title')
+    if len(title) > 60:
+      fntsize = 'medium'
 
-  plt.title(title, size=fntsize)
+    plt.title(title, size=fntsize)
 
-  cbar = plt.colorbar()
-  cbar.set_label('Power ($V^2/Hz$)')
+    cbar = plt.colorbar()
+    cbar.set_label('Power Density ($V^2/Hz$)')
 
   ##############################################################################
-
   total_power = map(lambda x:np.sum(x[1]), powerspecvec)
-  plt.subplot(gs[1])
+  plt.subplot(gs[-1])
   dt = tdurationsecs/len(total_power)
   tvec = np.arange(len(total_power)) * dt
   plt.plot(tvec, total_power)
@@ -212,12 +216,19 @@ def plot_spectrogram(**cmdargs):
   plt.xticks(np.arange(0, tdurationsecs+1, min(30, tdurationsecs/4)))
 
   plt.xlabel('Time (s)')
-  plt.ylabel('Total Power ($V^2$)')
+  plt.ylabel('Power ($V^2$)')
 
-  # add the same color bar as the top graph, then hide it so
-  # the top and bottom plot edges line up
-  cbar = plt.colorbar()
-  cbar.remove()
+  if not power_only:
+    # add the same color bar as the top graph, then hide it so
+    # the top and bottom plot edges line up
+    cbar = plt.colorbar()
+    cbar.remove()
+
+  if power_fit > 0:
+    coeffs = np.polyfit(tvec, total_power, power_fit)
+    fitfunc = np.poly1d(coeffs)
+    plt.hold(True)
+    plt.plot(tvec, fitfunc(tvec), color='k')
 
   ##############################################################################
   savepdf = cmdargs['pdf']
@@ -252,6 +263,12 @@ def plot_spectrogram(**cmdargs):
 
     f = plt.figure(plt.get_fignums()[0])
 
+    savefile += '-bin'+str(binsize)
+    if power_only:
+      savefile += '-p_only'
+    if power_fit>0:
+      savefile += '-pfit'+str(power_fit)
+
     # if we don't do this then the resulting plot isn't long enough to
     # comfortably contain the x axis tick labels
     f.set_size_inches(16, 9)
@@ -275,6 +292,9 @@ def get_commandline_parser():
   parser.add_argument('-png', action='store_true', default=False, help='Plot will be saved to PNG instead of being shown')
 
   parser.add_argument('-no_debug', action='store_true', default=False, help='Debugging information at lower-left will not be plotted.')
+
+  parser.add_argument('-power_only', action='store_true', default=False, help='When given only the power-over-time series is plotted')
+  parser.add_argument('-power_fit', type=int, default=-1, help='When >0, a polynomial of order n will be fitted to the data')
 
   parser.add_argument('-head_skip', type=int, default=0, help='Number of files to skip before head of the queue. Files will be sorted before skip is applied. Negative values are allowed, in which case it turns into tail skip')
 
