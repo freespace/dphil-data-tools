@@ -337,6 +337,7 @@ class Plot(object):
       csvfile = csvfiles[csvidx]
       print 'Plotting',csvfile
       data = DataLoader(csvfile)
+      print 'Data source', data.source
 
       pathcomponents = op.abspath(csvfile).split(op.sep)
       filespec = op.sep.join(pathcomponents[-4:])
