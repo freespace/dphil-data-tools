@@ -68,8 +68,8 @@ def get_meta(datafile, scandata=None, time_as_string=True):
                   wlim=wlim,
                   starttime=tstart,
                   endtime=tend,
-                  wstep=wvec[1]-wvec[0],
-                  zstep=zvec[1]-zvec[0],
+                  wstep_um=wvec[1]-wvec[0],
+                  zstep_um=zvec[1]-zvec[0],
                   comments=scandata.comments,
                   xstart_um=xstartpos_um,
                   ystart_um=ystartpos_um,
@@ -82,8 +82,11 @@ def get_meta(datafile, scandata=None, time_as_string=True):
 
 def print_meta(datafile):
   metadata = get_meta(datafile)
-  for key,value in metadata.items():
-    print key,"=", value
+  keys = metadata.keys()
+  keys.sort()
+  for k in keys:
+    value = metadata[k]
+    print k,"=", value
 
 def parse_commandline_arguments():
   parser = get_commandline_parser()
