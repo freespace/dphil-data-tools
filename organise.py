@@ -23,7 +23,7 @@ def dir_phantom_id(phantom_id):
   return 'id-'+phantom_id
 
 func_table = dict(by_phantom_id=[get_phantom_id, dir_phantom_id],
-                      by_LUT=[get_LUT, dir_LUT])
+                      by_lut=[get_LUT, dir_LUT])
 def main(files_to_organise, **kwargs):
   # key identifies which part of the file we should by, e.g. phantom ID
   key_set = set()
@@ -67,7 +67,7 @@ def get_commandline_parser():
 
   g = parser.add_mutually_exclusive_group(required=True)
   g.add_argument('-by_phantom_id', action='store_true', help='Organises by phantom ID')
-  g.add_argument('-by_LUT', action='store_true', help='Organises by look-up-table')
+  g.add_argument('-by_lut', action='store_true', help='Organises by look-up-table')
 
   return parser
 
