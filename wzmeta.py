@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 from __future__ import division
 
+import numpy as np
+
 import dphil_paths
 
 def main(**kwargs):
@@ -9,10 +11,17 @@ def main(**kwargs):
   for datafile in datafiles:
     print_meta(datafile)
 
-def get_meta(datafile):
-  import numpy as np
-  npzfile = np.load(datafile)
-  scandata = npzfile['scandata'].item()
+def get_meta(datafile, scandata=None, time_as_string=True):
+  """
+  If scandata is given, the datafile is ignored. Default None
+
+  If time_as_string is True, starttime and endtime will be
+  ctime strings, otherwise unix floats. Default True
+  """
+
+  if scandata is None:
+    npzfile = np.load(datafile)
+    scandata = npzfile['scandata'].item()
 
   if scandata.w is None:
     print datafile + ' does not define w axis, not processing.'
@@ -46,7 +55,10 @@ def get_meta(datafile):
   kctl_out = -10 / 200e-3
   LD_current = LD_current_v / kctl_out
 
-  from time import ctime
+  if time_as_string:
+    from time import ctime
+    tstart = ctime(tstart)
+    tend = ctime(tend)
   metadata = dict(width=zrange,
                   height=wrange,
                   w=scandata.w,
@@ -54,8 +66,8 @@ def get_meta(datafile):
                   source_file=datafile,
                   zlim=zlim,
                   wlim=wlim,
-                  starttime=ctime(tstart),
-                  endtime=ctime(tend),
+                  starttime=tstart,
+                  endtime=tend,
                   wstep=wvec[1]-wvec[0],
                   zstep=zvec[1]-zvec[0],
                   comments=scandata.comments,
