@@ -79,6 +79,10 @@ class DataLoader(object):
       else:
         source = None
 
+      if source == 'wzgrowth.py':
+        matrix = npzfile['growth_matrix']
+        xylabel = 'Time', 'Growth (um)'
+
       if source == 'SIOS':
         scandata = npzfile['scandata'].item()
         matrix = scandata.matrix
