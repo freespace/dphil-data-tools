@@ -4,29 +4,46 @@ from __future__ import division
 """
 This script tracks the growth of any deformation in XZ scans.
 
-It works by sectioning the image into 3 section, with the section
-at lowest X starting position, the inlet of the channel, serving as
-the reference. The first section will be called the reference section.
+It works by sectioning the image into 3 horizontal sections in ratio of 1:2:1.
+In the first section, the one closest to X origin and upstream of all other
+sections, it computes the half-maximum in each section. This is each section's
+reference threshold.
 
-The half-maximum of the reference section is computed, and then for
-each of ections the position at which the recorded value
-exceeds the half-maximum for the 3rd time is recorded, and the smallest
-Z position taken to be the metric for the section at the sampling time.
+For each scan, the lowest Z value in each section for which the reference
+threshold is met and exceeded, provided that the pixels immediately to either
+side is greather than 80% of the threshold value. This deals random 'hot' pixels
+and doesn't suppress the growth data too much.
 
-The computed Z position is *subtracted* from the Z position of the first scan.
-The result is then a measure of the difference between the first scan and the
-current scan. Because lower Z is to the left and US is also to the left the
-result is conveniently positive.
+The value recorded for each section is then *substracted* from the Z position
+of first scan. The result is then a measure of the difference between the first
+scan and the current scan. Because lower Z is to the left and US is also to the
+left the result is conveniently positive.
 
+Furthermore growth data of section 2, the central section, is detrended
+against section 1 by subtracting from it section 1's growth value.
 
 The result then is 3 sets of Z-position-over-time which is then written
 to disk as NPZ along with the reference value used. The save data
 is a matrix in the form:
 
-  [t0, ref_value, section_1_z, section_2_z, section_3_z]
+  [t_0, sec1_growth, ... , sec3_growth, sec1_thres, ... , sec3_thres, sec2_detrend]
   ...
-  [t_last, ref_value, section_1_z, section_2_z, section_3_z]
+  [t_duration, sec1_growth, ... , sec3_growth, sec1_thres, ... , sec3_thres, sec2_detrend]
 
+The rationale for using a reference section derived from the first scan instead
+of say, the half maximum of each scan is that
+
+(a) using an independent measure in each scan means the metric is affected
+    by the distribution
+(b) clinically is the absolute concentration that matters, not the relative
+    concentration.
+
+This method isn't perfect: the values it derives does match measurements derived
+from microscopy due
+
+(a) scattering due to optical depth and media
+(b) large FWHM
+(c) axial glare
 """
 
 import numpy as np
@@ -56,59 +73,67 @@ def get_npz(scan_id, scan_number):
 
   return None
 
-def compute_growth(npz, debug):
+def compute_growth(npz, debug, thresholds=None):
   from dataloader import DataLoader
   loader = DataLoader(npz)
   scandata = loader.source_obj
 
   nrows, ncols = scandata.matrix.shape
 
+  # we deal with the 1:2:1 ratio by dividing into 4 and merging
+  # the center 2
+  nsubsections = 4
   nsections = 3
+
   # note that this is an integer division, so will under-estimate
   # the number of rows needed by up to 1
-  rowspersection = nrows // nsections
+  rows_per_subsection = nrows // nsubsections
 
-  if debug:
-    import matplotlib.pyplot as plt
-    import matplotlib_setup
-    from utils import keypress
-    mat = scandata.matrix
-    for secidx in xrange(nsections):
-      mat[secidx*rowspersection] = np.ones(mat.shape[1])*mat.max()
-
-    plt.imshow(mat)
-    plt.gcf().canvas.mpl_connect('key_press_event', keypress)
-    plt.show()
-    plt.close()
-
-  half_max = None
   min_z_vec = list()
+  min_rdx_vec = list()
+  sec_thres_vec = list()
 
-  for secidx in xrange(nsections):
-    startrow = secidx * rowspersection
+  sec_ratio = (1,2,1)
+  sec_boundary_vec = list()
 
+  startrow = 0
+  for secidx, rowspan in zip(xrange(nsections), sec_ratio):
     # because of integer truncation in the calculation of rowspersection,
     # when we calculate the last section we need to take up any remainders
     # by going all the way to the bottom
     if secidx + 1 < nsections:
-      endrow = startrow + rowspersection
+      endrow = startrow + rows_per_subsection * rowspan
     else:
       endrow = nrows
 
     section = scandata.matrix[startrow:endrow,:]
+    sec_boundary_vec.append((startrow, endrow))
+
+    # print section.shape
+    # update startrow for the next loop.
+    startrow = endrow + 1
+
+    if thresholds is None:
+      # if no threshold is given, computed it
+      sec_thres = section.max()*0.5
+      p('~', False)
+    else:
+      # otherwise use what we got
+      sec_thres = thresholds[secidx]
+      p('.', False)
 
     min_rdx = None
-    if secidx == 0:
-      # this is the reference section, so compute the half-maximum
-      half_max = np.amax(section)/2
 
     for row in section:
       exceed_cnt = 0
       for rdx, val in enumerate(row):
-        if val > half_max:
-          exceed_cnt += 1
+        if val >= sec_thres:
+          if rdx > 0 and rdx + 1 < len(row):
+            t = val * 0.8
+            if row[rdx-1] >= t and row[rdx+1] >= t:
+              exceed_cnt += 1
 
-        if exceed_cnt >= 3:
+        if exceed_cnt >= 1:
           if min_rdx is None or rdx < min_rdx:
             min_rdx = rdx
           break
@@ -116,11 +141,36 @@ def compute_growth(npz, debug):
     min_z = scandata.zpositionvec[min_rdx]
     min_z_vec.append(min_z)
 
+    min_rdx_vec.append(min_rdx)
+    sec_thres_vec.append(sec_thres)
+
+  if debug:
+    import matplotlib.pyplot as plt
+    import matplotlib_setup
+    from utils import keypress
+
+    # hilight the section boundary
+    # and the recorded Z location
+    mat = scandata.matrix
+    for secidx in xrange(nsections):
+      startrow, endrow = sec_boundary_vec[secidx]
+
+      mat[startrow] = np.ones(mat.shape[1])*mat.max()
+
+      mat[startrow:endrow,min_rdx_vec[secidx]] = np.ones(endrow-startrow) * mat.max()
+
+    plt.imshow(mat)
+    plt.colorbar()
+    plt.gcf().canvas.mpl_connect('key_press_event', keypress)
+
+    plt.show()
+    plt.close()
+
   from wzmeta import get_meta
   meta = get_meta(None, scandata=scandata, time_as_string=False)
 
   t = meta['starttime']
-  ret = [t, half_max] + min_z_vec
+  ret = [t] + min_z_vec + sec_thres_vec
   return np.asarray(ret)
 
 def main(scan_id=None, debug=False):
@@ -130,6 +180,7 @@ def main(scan_id=None, debug=False):
 
   row_vec = list()
 
+  thresholds = None
   while not done:
     npz = get_npz(scan_id, scan_num)
     scan_num += 1
@@ -137,27 +188,39 @@ def main(scan_id=None, debug=False):
     if npz is None:
       done = True
       break
-    p('%d..'%(scan_num), False)
-    row_vec.append(compute_growth(npz, debug))
+    p('%d'%(scan_num), False)
+    row_vec.append(compute_growth(npz, debug, thresholds))
+    if thresholds is None:
+      thresholds = row_vec[-1][-3:]
+
+  p('done')
 
   # compute the growth distance
-  # if we don't do this we end up modifying row0!
+  # if we don't do this we end up modifying row0
   row0 = np.copy(row_vec[0])
   for row in row_vec:
-    row[2:] = row0[2:] - row[2:]
+    row[1:] = row0[1:] - row[1:]
+    # compute relative time
+    row[0] = row[0] - row0[0]
 
   growth_matrix = np.vstack(row_vec)
-  p('done')
+
+  # detrend central section
+  detrended = growth_matrix[:,2] - growth_matrix[:,1]
+  # make it into a column vector
+  detrended = detrended.reshape(detrended.size, 1)
+
+  growth_matrix = np.hstack((growth_matrix, detrended))
+
   p('Matrix shape %s'%(str(growth_matrix.shape)))
 
-  if not debug:
-    savedata = dict(growth_matrix=growth_matrix,
-                    source='wzgrowth.py',
-                    scan_id=scan_id)
+  savedata = dict(growth_matrix=growth_matrix,
+                  source='wzgrowth.py',
+                  scan_id=scan_id)
 
-    outputfile = scan_id + '_growth.npz'
-    np.savez_compressed(outputfile, **savedata)
-    p('Growth data saved to %s'%(outputfile))
+  outputfile = scan_id + '_growth.npz'
+  np.savez_compressed(outputfile, **savedata)
+  p('Growth data saved to %s'%(outputfile))
 
 def parse_commandline_arguments():
   parser = get_commandline_parser()
@@ -167,7 +230,7 @@ def parse_commandline_arguments():
 def get_commandline_parser():
   import argparse
   parser = argparse.ArgumentParser(description='Measures growth of deformation over time in XZ scans')
-  parser.add_argument('-debug', action='store_true', help='If given the sections boundaries will be shown for each image. No data is saved.')
+  parser.add_argument('-debug', action='store_true', help='If given the sections boundaries will be shown for each image.')
   parser.add_argument('scan_id', type=str, help='Scan ID of scan to measure')
 
   return parser
