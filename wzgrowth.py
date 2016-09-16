@@ -73,6 +73,49 @@ def get_npz(scan_id, scan_number):
 
   return None
 
+def estimate_threshold(scan_id):
+  npz = get_npz(scan_id, 0)
+  from dataloader import DataLoader
+  loader = DataLoader(npz)
+  scandata = loader.source_obj
+  ref_sec = scandata.matrix[0:25,:]
+
+  threshold = ref_sec.max() * 0.5
+  rdx_sum = 0
+  exceed_cnt = 0
+  for row in ref_sec:
+    # forward scan to find first crossing
+    for rdx, val in enumerate(row):
+      if val > threshold:
+        rdx_sum += rdx
+        exceed_cnt += 1
+        break
+
+    # backward scan to find last crossing
+    for rdx, val in enumerate(reversed(row)):
+      if val > threshold:
+        # get the fwd index, remember that the
+        # row values are reversed
+        rdx = row.size - rdx - 1
+
+        rdx_sum += rdx
+
+        # no need to increment exceed_cnt since the
+        # forward scan done it already
+        break
+
+  rdx_centre = rdx_sum / 2 / exceed_cnt
+  print rdx_centre
+  channel_width_um = 370
+  zstep_um = scandata.zpositionvec[1] - scandata.zpositionvec[0]
+  channel_width_idx = channel_width_um / zstep_um
+  rdx_thres = rdx_centre - channel_width_idx // 2
+
+  thres_sum = 0
+  for row in ref_sec:
+    thres_sum += row[rdx_thres]
+  return thres_sum / ref_sec.shape[0]
+
 def compute_growth(npz, debug, threshold=None):
   from dataloader import DataLoader
   loader = DataLoader(npz)
@@ -160,7 +203,7 @@ def compute_growth(npz, debug, threshold=None):
 
       mat[startrow:endrow,min_rdx_vec[secidx]] = np.ones(endrow-startrow) * mat.max()
 
-    plt.imshow(mat)
+    plt.imshow(mat, interpolation='None')
     plt.colorbar()
     plt.gcf().canvas.mpl_connect('key_press_event', keypress)
 
@@ -181,7 +224,8 @@ def main(scan_id=None, debug=False):
 
   row_vec = list()
 
-  threshold = None
+  threshold = estimate_threshold(scan_id)
+
   while not done:
     npz = get_npz(scan_id, scan_num)
     scan_num += 1
