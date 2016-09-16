@@ -6,7 +6,7 @@ This script tracks the growth of any deformation in XZ scans.
 
 It works by sectioning the image into 3 horizontal sections in ratio of 1:2:1.
 In the first section, the one closest to X origin and upstream of all other
-sections, it computes the half-maximum in each section. This is each section's
+sections, it computes the half-maximum. This is each section's
 reference threshold.
 
 For each scan, the lowest Z value in each section for which the reference
@@ -26,9 +26,9 @@ The result then is 3 sets of Z-position-over-time which is then written
 to disk as NPZ along with the reference value used. The save data
 is a matrix in the form:
 
-  [t_0, sec1_growth, ... , sec3_growth, sec1_thres, ... , sec3_thres, sec2_detrend]
+  [t_0, sec1_growth, ... , sec3_growth, reference_threshold, sec2_detrend]
   ...
-  [t_duration, sec1_growth, ... , sec3_growth, sec1_thres, ... , sec3_thres, sec2_detrend]
+  [t_n, sec1_growth, ... , sec3_growth, reference_threshold, sec2_detrend]
 
 The rationale for using a reference section derived from the first scan instead
 of say, the half maximum of each scan is that
@@ -73,7 +73,7 @@ def get_npz(scan_id, scan_number):
 
   return None
 
-def compute_growth(npz, debug, thresholds=None):
+def compute_growth(npz, debug, threshold=None):
   from dataloader import DataLoader
   loader = DataLoader(npz)
   scandata = loader.source_obj
@@ -91,7 +91,6 @@ def compute_growth(npz, debug, thresholds=None):
 
   min_z_vec = list()
   min_rdx_vec = list()
-  sec_thres_vec = list()
 
   sec_ratio = (1,2,1)
   sec_boundary_vec = list()
@@ -113,36 +112,38 @@ def compute_growth(npz, debug, thresholds=None):
     # update startrow for the next loop.
     startrow = endrow + 1
 
-    if thresholds is None:
-      # if no threshold is given, computed it
-      sec_thres = section.max()*0.5
-      p('~', False)
+    if threshold is None:
+      threshold = section.max()*0.5
+      p('=', False)
     else:
-      # otherwise use what we got
-      sec_thres = thresholds[secidx]
       p('.', False)
 
     min_rdx = None
 
-    for row in section:
-      exceed_cnt = 0
-      for rdx, val in enumerate(row):
-        if val >= sec_thres:
-          if rdx > 0 and rdx + 1 < len(row):
-            t = val * 0.8
-            if row[rdx-1] >= t and row[rdx+1] >= t:
-              exceed_cnt += 1
+    alpha = 0.5
+    while min_rdx is None:
+      for row in section:
+        exceed_cnt = 0
+        for rdx, val in enumerate(row):
+          if val >= threshold:
+            if rdx > 0 and rdx + 1 < len(row):
+              t = val * alpha
+              if row[rdx-1] >= t and row[rdx+1] >= t:
+                exceed_cnt += 1
 
-        if exceed_cnt >= 1:
-          if min_rdx is None or rdx < min_rdx:
-            min_rdx = rdx
-          break
+          if exceed_cnt >= 1:
+            if min_rdx is None or rdx < min_rdx:
+              min_rdx = rdx
+            break
+
+      alpha /= 2
+
+    assert min_rdx is not None
 
     min_z = scandata.zpositionvec[min_rdx]
     min_z_vec.append(min_z)
 
     min_rdx_vec.append(min_rdx)
-    sec_thres_vec.append(sec_thres)
 
   if debug:
     import matplotlib.pyplot as plt
@@ -170,7 +171,7 @@ def compute_growth(npz, debug, thresholds=None):
   meta = get_meta(None, scandata=scandata, time_as_string=False)
 
   t = meta['starttime']
-  ret = [t] + min_z_vec + sec_thres_vec
+  ret = [t] + min_z_vec + [threshold]
   return np.asarray(ret)
 
 def main(scan_id=None, debug=False):
@@ -180,7 +181,7 @@ def main(scan_id=None, debug=False):
 
   row_vec = list()
 
-  thresholds = None
+  threshold = None
   while not done:
     npz = get_npz(scan_id, scan_num)
     scan_num += 1
@@ -189,9 +190,9 @@ def main(scan_id=None, debug=False):
       done = True
       break
     p('%d'%(scan_num), False)
-    row_vec.append(compute_growth(npz, debug, thresholds))
-    if thresholds is None:
-      thresholds = row_vec[-1][-3:]
+    row_vec.append(compute_growth(npz, debug, threshold))
+    if threshold is None:
+      threshold = row_vec[-1][-1]
 
   p('done')
 
