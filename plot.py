@@ -515,7 +515,7 @@ def get_commandline_parser():
   parser.add_argument('-xlabel', type=str, help='X label.')
   parser.add_argument('-ylabel', type=str, help='Y label.')
 
-  parser.add_argument('-legend_position', type=str, default='upper right', help='Matplotlib position to put the legend, defaults to "upper right". Note this must be quoted')
+  parser.add_argument('-legend_position', type=str, default='best', help='Matplotlib position to put the legend, defaults to "upper right". Note this must be quoted')
   parser.add_argument('-labels', type=str, nargs='+', help='Labels for each series to use in the legend. If there are not enough labels for series, then the last label is repeated.')
   parser.add_argument('-no_legend', action='store_true', default=False, help='If given no legend will be plotted.')
 
