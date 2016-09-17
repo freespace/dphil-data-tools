@@ -68,8 +68,13 @@ def get_npz(scan_id, scan_number):
   # match on scan_number
   for fname in npzfilenames:
     if '-' in fname:
-      if int(fname.split('-')[1]) == scan_number:
-        return fname
+      parts = fname.split('-')
+      if len(parts) >= 4:
+        try:
+          if int(parts[1]) == scan_number:
+            return fname
+        except:
+          pass
 
   return None
 
@@ -217,7 +222,7 @@ def compute_growth(npz, debug, threshold=None):
   ret = [t] + min_z_vec + [threshold]
   return np.asarray(ret)
 
-def main(scan_id=None, debug=False):
+def main(scan_id=None, debug=False, suffix=''):
   # keep reading scans until we run out
   scan_num = 0
   done = False
@@ -263,7 +268,7 @@ def main(scan_id=None, debug=False):
                   source='wzgrowth.py',
                   scan_id=scan_id)
 
-  outputfile = scan_id + '_growth.npz'
+  outputfile = scan_id + '-growth' + suffix + '.npz'
   np.savez_compressed(outputfile, **savedata)
   p('Growth data saved to %s'%(outputfile))
 
@@ -276,6 +281,7 @@ def get_commandline_parser():
   import argparse
   parser = argparse.ArgumentParser(description='Measures growth of deformation over time in XZ scans')
   parser.add_argument('-debug', action='store_true', help='If given the sections boundaries will be shown for each image.')
+  parser.add_argument('-suffix', type=str, default='', help='If given will be appeneded to output filename')
   parser.add_argument('scan_id', type=str, help='Scan ID of scan to measure')
 
   return parser
