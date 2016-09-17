@@ -168,23 +168,13 @@ def compute_growth(npz, debug, threshold=None):
 
     min_rdx = None
 
-    alpha = 0.5
-    while min_rdx is None:
-      for row in section:
-        exceed_cnt = 0
-        for rdx, val in enumerate(row):
-          if val >= threshold:
-            if rdx > 0 and rdx + 1 < len(row):
-              t = val * alpha
-              if row[rdx-1] >= t and row[rdx+1] >= t:
-                exceed_cnt += 1
-
-          if exceed_cnt >= 1:
-            if min_rdx is None or rdx < min_rdx:
-              min_rdx = rdx
-            break
-
-      alpha /= 2
+    for row in section:
+      exceed_cnt = 0
+      for rdx, val in enumerate(row):
+        if val >= threshold:
+          if min_rdx is None or rdx < min_rdx:
+            min_rdx = rdx
+          break
 
     assert min_rdx is not None
 
