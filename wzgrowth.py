@@ -166,18 +166,32 @@ def compute_growth(npz, debug, threshold=None):
     else:
       p('.', False)
 
-    min_rdx = None
-
+    rdx_vec = list()
     for row in section:
       exceed_cnt = 0
       for rdx, val in enumerate(row):
         if val >= threshold:
-          if min_rdx is None or rdx < min_rdx:
-            min_rdx = rdx
+          rdx_vec.append(rdx)
           break
 
-    assert min_rdx is not None
+    assert len(rdx_vec)
+    rdx_vec = np.asarray(rdx_vec)
 
+    if len(rdx_vec) > 3:
+      # attempt to detect 'hot' spikes by looking for
+      # narrow outliers
+      def hasoutliers(rdx_vec):
+        rdx_halfmin = rdx_vec.min() + (rdx_vec.max() - rdx_vec.min())/2
+        pc_below_halfmin = sum(rdx_vec < rdx_halfmin)/rdx_vec.size*100
+        print 'pc_below_halfmin=',pc_below_halfmin
+        return pc_below_halfmin < 5
+
+      while hasoutliers(rdx_vec):
+        p('Removing outliers')
+        rdx_vec = rdx_vec[rdx_vec > rdx_vec.min()]
+
+    min_rdx = rdx_vec.min()
+    assert min_rdx is not None
     min_z = scandata.zpositionvec[min_rdx]
     min_z_vec.append(min_z)
 
