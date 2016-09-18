@@ -183,11 +183,11 @@ def compute_growth(npz, debug, threshold=None):
       def hasoutliers(rdx_vec):
         rdx_halfmin = rdx_vec.min() + (rdx_vec.max() - rdx_vec.min())/2
         pc_below_halfmin = sum(rdx_vec < rdx_halfmin)/rdx_vec.size*100
-        print 'pc_below_halfmin=',pc_below_halfmin
+        #print 'pc_below_halfmin=',pc_below_halfmin
         return pc_below_halfmin < 5
 
       while hasoutliers(rdx_vec):
-        p('Removing outliers')
+        p('x')
         rdx_vec = rdx_vec[rdx_vec > rdx_vec.min()]
 
     min_rdx = rdx_vec.min()
