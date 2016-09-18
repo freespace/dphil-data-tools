@@ -433,6 +433,20 @@ class Plot(object):
     if self.xlim is not None:
       ax.set_xlim(self.xlim)
 
+    def get_ticks(start, end, step):
+      assert end > start
+      diff = end - start
+      ticks = np.arange(diff // step) * step + start
+      return np.append(ticks, [end])
+
+    if self.xtic_step is not None:
+      minx, maxx = ax.get_xlim()
+      ax.set_xticks(get_ticks(minx, maxx, self.xtic_step))
+
+    if self.ytic_step is not None:
+      miny, maxy = ax.get_ylim()
+      ax.set_yticks(get_ticks(miny, maxy, self.ytic_step))
+
     yaxis = ax.get_yaxis()
     xaxis = ax.get_xaxis()
 
@@ -526,6 +540,9 @@ def get_commandline_parser():
 
   parser.add_argument('-ylim', type=float, nargs=2, default=None, help='If given, the y limits will be as given')
   parser.add_argument('-xlim', type=float, nargs=2, default=None, help='If given, the x limits will be as given')
+
+  parser.add_argument('-xtic_step', type=float, default=None, help='If given, xtics will be this this far apart')
+  parser.add_argument('-ytic_step', type=float, default=None, help='If given, ytics will be this this far apart')
 
   parser.add_argument('-hgrid', action='store_true', default=False, help='If given, horizontal grid will be added.')
   parser.add_argument('-vgrid', action='store_true', default=False, help='If given, vertical grid will be added.')
