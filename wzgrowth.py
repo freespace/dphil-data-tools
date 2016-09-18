@@ -174,21 +174,33 @@ def compute_growth(npz, debug, threshold=None):
           rdx_vec.append(rdx)
           break
 
+    # hot spikes are symmetrical about channel center while
+    # deformation due to US isn't, so we need to find the boundary
+    # on both sides of the channel
+    back_rdx_vec = list()
+    for row in section:
+      exceed_cnt = 0
+      for rdx, val in enumerate(reversed(row)):
+        if val >= threshold:
+          back_rdx_vec.append(row.size - rdx - 1)
+          break
+
     assert len(rdx_vec)
+    assert len(back_rdx_vec) == len(rdx_vec)
+
     rdx_vec = np.asarray(rdx_vec)
+    back_rdx_vec = np.asarray(back_rdx_vec)
 
     if len(rdx_vec) > 3:
-      # attempt to detect 'hot' spikes by looking for
-      # narrow outliers
-      def hasoutliers(rdx_vec):
-        rdx_halfmin = rdx_vec.min() + (rdx_vec.max() - rdx_vec.min())/2
-        pc_below_halfmin = sum(rdx_vec < rdx_halfmin)/rdx_vec.size*100
-        #print 'pc_below_halfmin=',pc_below_halfmin
-        return pc_below_halfmin < 5
+      # find outliers by looking for large back_rdx values
+      back_rdx_mean = np.mean(back_rdx_vec)
+      back_rdx_std = np.std(back_rdx_vec)
+      keep = back_rdx_vec < (back_rdx_mean + back_rdx_std*3)
 
-      while hasoutliers(rdx_vec):
-        p('x')
-        rdx_vec = rdx_vec[rdx_vec > rdx_vec.min()]
+      if sum(keep) != len(rdx_vec):
+        p('x', False)
+
+      rdx_vec = rdx_vec[keep]
 
     min_rdx = rdx_vec.min()
     assert min_rdx is not None
