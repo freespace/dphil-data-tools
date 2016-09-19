@@ -121,6 +121,38 @@ def estimate_threshold(scan_id):
     thres_sum += row[rdx_thres]
   return thres_sum / ref_sec.shape[0]
 
+def remove_outliers(rdx_vec, back_rdx_vec):
+  """
+  Attempts to detect and removes outliers
+  """
+  if len(rdx_vec) < 4:
+    return rdx_vec
+
+  # find outliers by looking for large back_rdx values
+  # Note that this isn't perfect, b/c very large deformations
+  # also produces spikes. It hasn't changed anything, but ideally
+  # we do something like a gradient analysis instead of pure stats
+  back_rdx_mean = np.mean(back_rdx_vec)
+  back_rdx_std = np.std(back_rdx_vec)
+  keep = back_rdx_vec < (back_rdx_mean + back_rdx_std*3)
+
+  if sum(keep) != len(rdx_vec):
+    p('x', False)
+
+  rdx_vec = rdx_vec[keep]
+
+  # sometimes outspikes occur asymmetrically. Look for a single row that
+  # is twice as close to zero than anything else
+  min_rdx = rdx_vec.min()
+  max_rdx = rdx_vec.max()
+  rdx_threshold = min_rdx + 0.5*(max_rdx - min_rdx)
+  if sum(rdx_vec < rdx_threshold) == 1:
+    keep = rdx_vec > min_rdx
+    rdx_vec = rdx_vec[keep]
+
+  return rdx_vec
+
+
 def compute_growth(npz, debug, threshold=None):
   from dataloader import DataLoader
   loader = DataLoader(npz)
@@ -191,16 +223,7 @@ def compute_growth(npz, debug, threshold=None):
     rdx_vec = np.asarray(rdx_vec)
     back_rdx_vec = np.asarray(back_rdx_vec)
 
-    if len(rdx_vec) > 3:
-      # find outliers by looking for large back_rdx values
-      back_rdx_mean = np.mean(back_rdx_vec)
-      back_rdx_std = np.std(back_rdx_vec)
-      keep = back_rdx_vec < (back_rdx_mean + back_rdx_std*3)
-
-      if sum(keep) != len(rdx_vec):
-        p('x', False)
-
-      rdx_vec = rdx_vec[keep]
+    rdx_vec = remove_outliers(rdx_vec, back_rdx_vec)
 
     min_rdx = rdx_vec.min()
     assert min_rdx is not None
