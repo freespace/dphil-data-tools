@@ -101,6 +101,8 @@ def get_commandline_parser():
   parser.add_argument('-suffix', type=str, default='', help='If given output will be added to file name just before .power')
   parser.add_argument('-merge', action='store_true', help='If given, output will be merged into a single npz')
   parser.add_argument('-glob', type=str, default='*', help='If input is a zip file, this is a unix shell glob pattern to match files for processing')
+  parser.add_argument('-stop_after', type=int, default=None, help='If given processing will stop after processing the specified number of spectrums')
+  parser.add_argument('-start_at', type=int, default=0, help='If given processing will start only after the nth file')
 
   return parser
 
@@ -204,10 +206,18 @@ if __name__ == '__main__':
 
   mergedict = dict()
   suffix = cmdargs['suffix']
+  stop_after = cmdargs['stop_after']
+  start_at = cmdargs['start_at']
 
   from os.path import splitext, extsep, basename
   inputfilelist = cmdargs['inputfiles']
-  for datatuple in _generate_data(inputfilelist, cmdargs['glob']):
+  for idx, datatuple in enumerate(_generate_data(inputfilelist, cmdargs['glob'])):
+    if stop_after is not None and idx >= stop_after:
+      break
+
+    if idx < start_at:
+      continue
+
     datadict = _process_data(*datatuple, **cmdargs)
     inputfile = datatuple[0]
 
