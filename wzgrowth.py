@@ -246,8 +246,12 @@ def compute_growth(npz, debug, threshold=None):
       mat[startrow] = np.ones(mat.shape[1])*mat.max()
 
       mat[startrow:endrow,min_rdx_vec[secidx]] = np.ones(endrow-startrow) * mat.max()
+      mat[startrow:endrow,min_rdx_vec[secidx]+1] = np.ones(endrow-startrow) * mat.max()
 
-    plt.imshow(mat, interpolation='None')
+    extent = [scandata.zpositionvec.min(), scandata.zpositionvec.max()]
+    extent += [scandata.wpositionvec.min(), scandata.wpositionvec.max()]
+
+    plt.imshow(mat, interpolation='None', extent=extent)
     plt.colorbar()
     plt.gcf().canvas.mpl_connect('key_press_event', keypress)
 
