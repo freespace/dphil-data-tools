@@ -101,6 +101,9 @@ class Plot(object):
     if self.ymultiplier != 1.0:
       suffix.append('YMULT')
 
+    if self.yindex is not 2:
+      suffix.append('YIDX%d'%(self.yindex))
+
     if self.ylim is not None:
       suffix.append('%.2fY%.2f'%(self.ylim[0], self.ylim[1]))
 
