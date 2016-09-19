@@ -31,10 +31,8 @@ def savefig(fig, *args, **kwargs):
   print 'Plot saved to file:',args[0]
 
 def _process_data(data, header):
-  # we delibrately ignore the DC signal, b/c it is very small
-  # and messes up our plotting when logged
-  freqvec = data[1:,0]
-  powervec = data[1:,1]
+  freqvec = data[:,0]
+  powervec = data[:,1]
 
   trigtimestr = header['trigtime']
 
