@@ -198,24 +198,39 @@ def compute_growth(npz, debug, threshold=None):
     else:
       p('.', False)
 
+    # basic protection against 'hot' pixels. The mechanism
+    # employed here allows us to detect a crossing with 1
+    # event even when we want 2 ideally
+    exceed_threshold = 2
+
     rdx_vec = list()
     for row in section:
-      exceed_cnt = 0
+      crossings = list()
       for rdx, val in enumerate(row):
         if val >= threshold:
-          rdx_vec.append(rdx)
+          crossings.append(rdx)
+
+        if len(crossings) >= exceed_threshold:
           break
+
+      if len(crossings):
+        rdx_vec.append(crossings[-1])
 
     # hot spikes are symmetrical about channel center while
     # deformation due to US isn't, so we need to find the boundary
     # on both sides of the channel
     back_rdx_vec = list()
     for row in section:
-      exceed_cnt = 0
+      crossings = list()
       for rdx, val in enumerate(reversed(row)):
         if val >= threshold:
-          back_rdx_vec.append(row.size - rdx - 1)
+          crossings.append(rdx)
+
+        if len(crossings) >= exceed_threshold:
           break
+
+      if len(crossings):
+        back_rdx_vec.append(row.size - crossings[-1] - 1)
 
     assert len(rdx_vec)
     assert len(back_rdx_vec) == len(rdx_vec)
@@ -265,14 +280,17 @@ def compute_growth(npz, debug, threshold=None):
   ret = [t] + min_z_vec + [threshold]
   return np.asarray(ret)
 
-def main(scan_id=None, debug=False, suffix=''):
+def main(scan_id=None, debug=False, suffix='', threshold=None):
   # keep reading scans until we run out
   scan_num = 0
   done = False
 
   row_vec = list()
 
-  threshold = estimate_threshold(scan_id)
+  if threshold is None:
+    threshold = estimate_threshold(scan_id)
+
+  p('Threshold=%.2f'%(threshold))
 
   while not done:
     npz = get_npz(scan_id, scan_num)
@@ -309,7 +327,8 @@ def main(scan_id=None, debug=False, suffix=''):
 
   savedata = dict(growth_matrix=growth_matrix,
                   source='wzgrowth.py',
-                  scan_id=scan_id)
+                  scan_id=scan_id,
+                  threshold=threshold)
 
   outputfile = scan_id + '-growth' + suffix + '.npz'
   np.savez_compressed(outputfile, **savedata)
@@ -325,6 +344,7 @@ def get_commandline_parser():
   parser = argparse.ArgumentParser(description='Measures growth of deformation over time in XZ scans')
   parser.add_argument('-debug', action='store_true', help='If given the sections boundaries will be shown for each image.')
   parser.add_argument('-suffix', type=str, default='', help='If given will be appeneded to output filename')
+  parser.add_argument('-threshold', type=float, default=None, help='If given will be used as the threshold when computing where the fluorescence front is')
   parser.add_argument('scan_id', type=str, help='Scan ID of scan to measure')
 
   return parser
