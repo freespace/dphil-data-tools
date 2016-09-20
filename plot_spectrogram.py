@@ -82,6 +82,7 @@ def plot_spectrogram(**cmdargs):
   no_debug = cmdargs['no_debug']
   power_only = cmdargs['power_only']
   power_fit = cmdargs['power_fit']
+  power_vlines = cmdargs['power_vlines']
 
   binpower = None
   bincount = 0
@@ -159,6 +160,7 @@ def plot_spectrogram(**cmdargs):
 
   if power_only:
     gs = gridspec.GridSpec(1, 1)
+    plt.figure(figsize=(10,5))
   else:
     gs = gridspec.GridSpec(2, 1, height_ratios=[2,1])
 
@@ -228,10 +230,16 @@ def plot_spectrogram(**cmdargs):
     plt.hold(True)
     plt.plot(tvec, fitfunc(tvec), color='k')
 
+  for vl in power_vlines:
+    ylim = plt.ylim()
+    plt.vlines(vl, ylim[0], ylim[1], linestyle='solid', colors=['r'])
+
   ##############################################################################
   savepdf = cmdargs['pdf']
   savepng = cmdargs['png']
-  shouldshow = not savepdf and not savepng
+  power_save = cmdargs['power_save']
+
+  shouldshow = not savepdf and not savepng and not power_save
 
   if shouldshow:
     for fignum in plt.get_fignums():
@@ -246,34 +254,44 @@ def plot_spectrogram(**cmdargs):
     cfm.window.activateWindow()
     cfm.window.raise_()
 
+  import os.path as op
+  if len(powerfilevec) > 1:
+    firstlast = (powerfilevec[0], powerfilevec[-1])
+    firstlast = map(op.basename,firstlast)
+    firstlast = map(lambda x:op.splitext(x)[0],firstlast)
+
+    savefile = '%s__%s-spectrogram'%(firstlast[0], firstlast[1])
   else:
-    import os.path as op
-    if len(powerfilevec) > 1:
-      firstlast = (powerfilevec[0], powerfilevec[-1])
-      firstlast = map(op.basename,firstlast)
-      firstlast = map(lambda x:op.splitext(x)[0],firstlast)
+    fname, _ = op.splitext(powerfilevec[0])
+    fname = op.basename(fname)
+    savefile = '%s-spectrogram'%(fname)
 
-      savefile = '%s__%s-spectrogram'%(firstlast[0], firstlast[1])
-    else:
-      fname, _ = op.splitext(powerfilevec[0])
-      fname = op.basename(fname)
-      savefile = '%s-spectrogram'%(fname)
+  f = plt.figure(plt.get_fignums()[0])
 
-    f = plt.figure(plt.get_fignums()[0])
+  savefile += '-bin'+str(binsize)
+  if power_only:
+    savefile += '-p_only'
 
-    savefile += '-bin'+str(binsize)
-    if power_only:
-      savefile += '-p_only'
-    if power_fit>0:
-      savefile += '-pfit'+str(power_fit)
+  if power_fit>0:
+    savefile += '-pfit'+str(power_fit)
 
-    # if we don't do this then the resulting plot isn't long enough to
-    # comfortably contain the x axis tick labels
-    f.set_size_inches(16, 9)
-    if savepng:
-      savefig(f, savefile+'.png')
-    if savepdf:
-      savefig(f, savefile+'.pdf')
+  for vl in power_vlines:
+    savefile += '-vl%.1f'%(vl)
+
+  if power_save:
+    power_mat = np.column_stack((tvec, total_power))
+    powersavefile = savefile + '-power-over-time.npz'
+    np.savez_compressed(powersavefile, power_matrix=power_mat, source='plot_spectrogram.py')
+    print 'Power curve saved to', powersavefile
+
+
+  # if we don't do this then the resulting plot isn't long enough to
+  # comfortably contain the x axis tick labels
+  f.set_size_inches(16, 9)
+  if savepng:
+    savefig(f, savefile+'.png')
+  if savepdf:
+    savefig(f, savefile+'.pdf')
 
 
 def get_commandline_parser():
@@ -293,6 +311,8 @@ def get_commandline_parser():
 
   parser.add_argument('-power_only', action='store_true', default=False, help='When given only the power-over-time series is plotted')
   parser.add_argument('-power_fit', type=int, default=-1, help='When >0, a polynomial of order n will be fitted to the data')
+  parser.add_argument('-power_vlines', nargs='+', type=float, help='When given a vertical line will be plotted at the specified x position')
+  parser.add_argument('-power_save', action='store_true', help='When given the data used to plot the power curve is saved')
 
   parser.add_argument('-head_skip', type=int, default=0, help='Number of files to skip before head of the queue. Files will be sorted before skip is applied. Negative values are allowed, in which case it turns into tail skip')
 

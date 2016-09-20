@@ -79,6 +79,10 @@ class DataLoader(object):
       else:
         source = None
 
+      if source == 'plot_spectrogram.py':
+        matrix = npzfile['power_matrix']
+        xylabel = 'Time (s)', 'Power (V^2)'
+
       if source == 'wzgrowth.py':
         matrix = npzfile['growth_matrix']
         xylabel = 'Time', 'Growth (um)'
