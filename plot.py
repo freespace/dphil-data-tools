@@ -338,6 +338,12 @@ class Plot(object):
 
       from dataloader import DataLoader
       csvfile = csvfiles[csvidx]
+
+      csv_ydx = None
+      if csvfile.endswith(']'):
+        csvfile, ydx = csvfile.rsplit('[', 1)
+        csv_ydx = int(ydx[:-1])
+
       print 'Plotting',csvfile
       data = DataLoader(csvfile)
       print 'Data source', data.source
@@ -360,7 +366,13 @@ class Plot(object):
         lbl = None
 
       xvec = data.matrix[:,self.xindex-1]
-      yvec = data.matrix[:,self.yindex-1]
+
+      ydx = self.yindex-1
+      if csv_ydx is not None:
+        ydx = csv_ydx-1
+
+      print 'Using y-index:',ydx+1
+      yvec = data.matrix[:,ydx]
 
       yerr = None
       if self.yerror_index is not None:
@@ -569,7 +581,7 @@ def get_commandline_parser():
   parser.add_argument('-include_first_last', action='store_true', default=False, help='If given, the first and last csv given is always plotted, regardless of skip, max_traces, or start_offset')
 
   parser.add_argument('-comments', type=str, nargs='+', default=None, help='If given, will be displayed in top left of plot in background. Not affected by -no_debug')
-  parser.add_argument('csvfiles', nargs='+', help='CSV/npz/trc files to plot')
+  parser.add_argument('csvfiles', nargs='+', help='CSV/npz/trc files to plot. Append [n], e.g. filename.npz[n], to use the nth column. This overrides the -yindex value. 1-based.')
 
   return parser
 
