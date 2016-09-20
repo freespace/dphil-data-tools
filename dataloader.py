@@ -52,6 +52,8 @@ class DataLoader(object):
       toload = file_content
     else:
       toload = datafilepath
+      import os
+      assert os.path.exists(toload), '%s does not exists!'%(toload)
 
     if datafilepath.endswith('csv'):
       import csvtools
