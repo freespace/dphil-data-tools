@@ -190,7 +190,7 @@ class Plot(object):
     tstart -= self._tstart0
     return 't=%.1f s'%(tstart)
 
-  def _plot_traces(self, lbl, xvec, yvec, tvec, yerr=None):
+  def _plot_traces(self, lbl, xvec, yvec, tvec, yerr=None, use_right=False):
     if self.negoverflow:
       print 'Fixing negative overflow assuming +/-10V range'
       # b/c of exposure control, the accumulated reading value can exceed
@@ -279,16 +279,21 @@ class Plot(object):
     if (len(ynew) > 100):
       errorevery = 2
 
-    self._ax.errorbar(xnew,
-                      ynew,
-                      linestyle=ls,
-                      color=lc,
-                      marker=marker,
-                      label=l,
-                      yerr=yerr,
-                      ecolor=ecolor,
-                      errorevery=errorevery,
-                      **self.plotkwargs)
+    ax = self._ax
+
+    if use_right:
+      ax = ax.twinx()
+
+    ax.errorbar(xnew,
+                ynew,
+                linestyle=ls,
+                color=lc,
+                marker=marker,
+                label=l,
+                yerr=yerr,
+                ecolor=ecolor,
+                errorevery=errorevery,
+                **self.plotkwargs)
 
   def plot(self):
     """
@@ -405,7 +410,8 @@ class Plot(object):
         yvec -= yvec.min()
         yvec /= yrange
 
-      self._plot_traces(lbl, xvec, yvec, tvec, yerr=yerr)
+      use_right = self.use_right_axis_for == csvfile
+      self._plot_traces(lbl, xvec, yvec, tvec, yerr=yerr, use_right=use_right)
 
       if self.fwhm:
         from stats import get_stats
@@ -571,6 +577,8 @@ def get_commandline_parser():
   parser.add_argument('-interp', action='store_true', default=False, help='If given, each series will be interpolated using a cubic')
   parser.add_argument('-lowpass', type=float, default=None, help='If given, each series will be low pass filtered, with the cutoff as specified in Hz. When used wit interp, low pass filtering occurs first')
   parser.add_argument('-negoverflow', action='store_true', default=False, help='If given negative values will be assumed to be overflows from +10, and will be fixed accordingly. This occurs before filtering and interpolation')
+
+  parser.add_argument('-use_right_axis_for', type=str, default=None, help='If given, the specified file will be plotted using the RIGHT Y axis')
 
   parser.add_argument('-plotfile', type=str, default=None, help='A file containing the filenames of csvs to plot, along with optional title and comments')
 
