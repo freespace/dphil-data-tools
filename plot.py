@@ -107,6 +107,9 @@ class Plot(object):
     if self.ylim is not None:
       suffix.append('%.2fY%.2f'%(self.ylim[0], self.ylim[1]))
 
+    if self.right_ylim is not None:
+      suffix.append('%.2fRY%.2f'%(self.right_ylim[0], self.right_ylim[1]))
+
     if self.xlim is not None:
       suffix.append('%.2fX%.2f'%(self.xlim[0], self.xlim[1]))
 
@@ -284,6 +287,8 @@ class Plot(object):
     if use_right:
       ax = ax.twinx()
       ax.set_ylabel(self.right_ylabel)
+      if self.right_ylim:
+        ax.set_ylim(*self.right_ylim)
 
     ax.errorbar(xnew,
                 ynew,
@@ -563,6 +568,7 @@ def get_commandline_parser():
   parser.add_argument('-yerror_index', type=int, default=None, help='If given, errorbars will be plotted using data in the specified column (1..)')
 
   parser.add_argument('-ylim', type=float, nargs=2, default=None, help='If given, the y limits will be as given')
+  parser.add_argument('-right_ylim', type=float, nargs=2, default=None, help='If given, the right y axis limits will be as given')
   parser.add_argument('-xlim', type=float, nargs=2, default=None, help='If given, the x limits will be as given')
 
   parser.add_argument('-xtic_step', type=float, default=None, help='If given, xtics will be this this far apart')
