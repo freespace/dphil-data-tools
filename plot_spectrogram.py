@@ -81,8 +81,7 @@ def plot_spectrogram(**cmdargs):
   max_bins = cmdargs['max_bins']
   no_debug = cmdargs['no_debug']
   power_only = cmdargs['power_only']
-  power_fit = cmdargs['power_fit']
-  power_vlines = cmdargs['power_vlines']
+  max_tduration = cmdargs['max_tduration']
 
   binpower = None
   bincount = 0
@@ -158,6 +157,9 @@ def plot_spectrogram(**cmdargs):
   tduration = tend - tstart
   tdurationsecs = tduration.total_seconds()
 
+  if max_tduration is not None:
+    tdurationsecs = min(tdurationsecs, max_tduration)
+
   if power_only:
     gs = gridspec.GridSpec(1, 1)
     plt.figure(figsize=(10,5))
@@ -207,13 +209,15 @@ def plot_spectrogram(**cmdargs):
     cbar.set_label('Power Density ($V^2/Hz$)')
 
   ##############################################################################
+  power_fit = cmdargs['power_fit']
+  power_vlines = cmdargs['power_vlines']
+  power_ylim = cmdargs['power_ylim']
+
   total_power = map(lambda x:np.sum(x[1]), powerspecvec)
   plt.subplot(gs[-1])
   dt = tdurationsecs/len(total_power)
   tvec = np.arange(len(total_power)) * dt
   plt.plot(tvec, total_power)
-  plt.xlim([0, tdurationsecs])
-  plt.xticks(np.arange(0, tdurationsecs+1, min(30, tdurationsecs/4)))
 
   plt.xlabel('Time (s)')
   plt.ylabel('Power ($V^2$)')
@@ -234,7 +238,48 @@ def plot_spectrogram(**cmdargs):
     ylim = plt.ylim()
     plt.vlines(vl, ylim[0], ylim[1], linestyle='solid', colors=['r'])
 
+  if power_ylim is not None:
+    plt.ylim(power_ylim)
   ##############################################################################
+
+  ancillary_data = cmdargs['ancillary_data']
+  ancillary_ylabel = cmdargs['ancillary_ylabel']
+  ancillary_ylim = cmdargs['ancillary_ylim']
+  ancillary_hline = cmdargs['ancillary_hline']
+
+  if ancillary_data:
+    datafile = ancillary_data
+    xindex = 1
+    yindex = 2
+
+    if datafile[-1] == ']':
+      datafile, yindex = datafile.rsplit('[', 1)
+      yindex = int(yindex[:-1])
+
+    from dataloader import DataLoader
+    loader = DataLoader(datafile)
+    xvec = loader.matrix[:,xindex-1]
+    yvec = loader.matrix[:,yindex-1]
+
+    ax = plt.gca()
+    ax = ax.twinx()
+    ax.plot(xvec, yvec, 'r')
+    ax.set_ylabel(ancillary_ylabel)
+
+    if ancillary_ylim is not None:
+      ax.set_ylim(ancillary_ylim)
+
+    if ancillary_hline is not None:
+      xlim = ax.get_xlim()
+      ax.hlines(ancillary_hline, xlim[0], xlim[1], linestyle='dashed', colors=['r'])
+
+  ##############################################################################
+
+  plt.xlim([0, tdurationsecs])
+  plt.xticks(np.arange(0, tdurationsecs+1, min(30, tdurationsecs/4)))
+
+  ##############################################################################
+
   savepdf = cmdargs['pdf']
   savepng = cmdargs['png']
   power_save = cmdargs['power_save']
@@ -270,13 +315,16 @@ def plot_spectrogram(**cmdargs):
 
   savefile += '-bin'+str(binsize)
   if power_only:
-    savefile += '-p_only'
+    savefile += '-ponly'
 
   if power_fit>0:
     savefile += '-pfit'+str(power_fit)
 
   for vl in power_vlines:
     savefile += '-vl%.1f'%(vl)
+
+  if ancillary_data:
+    savefile += '-ancillary'
 
   if power_save:
     power_mat = np.column_stack((tvec, total_power))
@@ -309,10 +357,18 @@ def get_commandline_parser():
 
   parser.add_argument('-no_debug', action='store_true', default=False, help='Debugging information at lower-left will not be plotted.')
 
+  parser.add_argument('-max_tduration', type=float, help='Sets the maximum duration in seconds')
+
   parser.add_argument('-power_only', action='store_true', default=False, help='When given only the power-over-time series is plotted')
   parser.add_argument('-power_fit', type=int, default=-1, help='When >0, a polynomial of order n will be fitted to the data')
   parser.add_argument('-power_vlines', nargs='+', default=[], type=float, help='When given a vertical line will be plotted at the specified x position')
   parser.add_argument('-power_save', action='store_true', help='When given the data used to plot the power curve is saved')
+  parser.add_argument('-power_ylim', type=float, nargs=2, help='Set y limits of power plot')
+
+  parser.add_argument('-ancillary_data', type=str, default=None, help='Specifies an additional NPZ to plot into the lower power plot using the right y axis. Using [n] notation at the end of the file to specify the Y column index is supported')
+  parser.add_argument('-ancillary_ylabel', type=str, default='', help='Specifies y label for ancillary data')
+  parser.add_argument('-ancillary_ylim', type=float, nargs=2, help='Set y limits of right axis for ancillary data')
+  parser.add_argument('-ancillary_hline', type=float, help='Adds a horizontal line to the ancillary plot')
 
   parser.add_argument('-head_skip', type=int, default=0, help='Number of files to skip before head of the queue. Files will be sorted before skip is applied. Negative values are allowed, in which case it turns into tail skip')
 
