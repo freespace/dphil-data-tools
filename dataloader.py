@@ -51,6 +51,7 @@ class DataLoader(object):
     if file_content:
       toload = file_content
     else:
+      assert datafilepath is not None, 'Supplied path is None'
       toload = datafilepath
       import os
       assert os.path.exists(toload), '%s does not exists!'%(toload)
