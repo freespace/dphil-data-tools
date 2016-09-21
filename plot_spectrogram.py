@@ -240,6 +240,8 @@ def plot_spectrogram(**cmdargs):
 
   if power_ylim is not None:
     plt.ylim(power_ylim)
+
+  plt.gca().get_yaxis().grid(True)
   ##############################################################################
 
   ancillary_data = cmdargs['ancillary_data']
