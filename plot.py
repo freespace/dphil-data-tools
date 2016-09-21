@@ -283,6 +283,7 @@ class Plot(object):
 
     if use_right:
       ax = ax.twinx()
+      ax.set_ylabel(self.right_ylabel)
 
     ax.errorbar(xnew,
                 ynew,
@@ -294,6 +295,7 @@ class Plot(object):
                 ecolor=ecolor,
                 errorevery=errorevery,
                 **self.plotkwargs)
+
 
   def plot(self):
     """
@@ -547,8 +549,9 @@ def get_commandline_parser():
   parser.add_argument('-xindex', type=int, default=1, help='Index of column (1..) to use for x axis')
   parser.add_argument('-yindex', type=int, default=2, help='Index of colunm (1..) to use for y axis')
 
-  parser.add_argument('-xlabel', type=str, help='X label.')
-  parser.add_argument('-ylabel', type=str, help='Y label.')
+  parser.add_argument('-xlabel', type=str, default='', help='X label.')
+  parser.add_argument('-ylabel', type=str, default='', help='Y label.')
+  parser.add_argument('-right_ylabel', type=str, default='',  help='Right Y label.')
 
   parser.add_argument('-legend_position', type=str, default='best', help='Matplotlib position to put the legend, defaults to "upper right". Note this must be quoted')
   parser.add_argument('-labels', type=str, nargs='+', help='Labels for each series to use in the legend. If there are not enough labels for series, then the last label is repeated.')
