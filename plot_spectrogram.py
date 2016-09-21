@@ -311,7 +311,7 @@ def get_commandline_parser():
 
   parser.add_argument('-power_only', action='store_true', default=False, help='When given only the power-over-time series is plotted')
   parser.add_argument('-power_fit', type=int, default=-1, help='When >0, a polynomial of order n will be fitted to the data')
-  parser.add_argument('-power_vlines', nargs='+', type=float, help='When given a vertical line will be plotted at the specified x position')
+  parser.add_argument('-power_vlines', nargs='+', default=[], type=float, help='When given a vertical line will be plotted at the specified x position')
   parser.add_argument('-power_save', action='store_true', help='When given the data used to plot the power curve is saved')
 
   parser.add_argument('-head_skip', type=int, default=0, help='Number of files to skip before head of the queue. Files will be sorted before skip is applied. Negative values are allowed, in which case it turns into tail skip')
