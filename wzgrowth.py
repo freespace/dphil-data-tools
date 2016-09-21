@@ -310,7 +310,8 @@ def main(scan_id=None, debug=False, suffix='', threshold=None):
   # if we don't do this we end up modifying row0
   row0 = np.copy(row_vec[0])
   for row in row_vec:
-    row[1:] = row0[1:] - row[1:]
+    # don't touch the last column which is the reference value
+    row[1:-1] = row0[1:-1] - row[1:-1]
     # compute relative time
     row[0] = row[0] - row0[0]
 
