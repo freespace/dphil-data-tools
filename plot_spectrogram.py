@@ -30,9 +30,12 @@ def savefig(fig, *args, **kwargs):
 
   print 'Plot saved to file:',args[0]
 
-def _process_data(data, header):
+def _process_data(data, header, highpass):
+  hp_filter = data[:,0]<highpass
   freqvec = data[:,0]
   powervec = data[:,1]
+
+  powervec[hp_filter] = 0
 
   trigtimestr = header['trigtime']
 
@@ -82,6 +85,7 @@ def plot_spectrogram(**cmdargs):
   no_debug = cmdargs['no_debug']
   power_only = cmdargs['power_only']
   max_tduration = cmdargs['max_tduration']
+  highpass = cmdargs['highpass']
 
   binpower = None
   bincount = 0
@@ -95,7 +99,7 @@ def plot_spectrogram(**cmdargs):
   powerspecvec = list()
   spec_count = 0
   for pfile, data, header in _data_generator(powerfilevec, **cmdargs):
-    freqvec, powervec, trigtime = _process_data(data, header)
+    freqvec, powervec, trigtime = _process_data(data, header, highpass)
     spec_count += 1
     # enforce the condition that power spectrums are monotically into the
     # future
@@ -351,15 +355,17 @@ def get_commandline_parser():
   parser.add_argument('-title', default='', help='Plot title')
   parser.add_argument('-cmap', default='jet', help='Matplotlib colormap to use, defaults to "jet"')
 
-  parser.add_argument('-binsize', type=int, default=5, help='Perform binning with the given bin size. Bin size does not have to be a integer divisor of the number of samples')
+  parser.add_argument('-binsize', type=int, default=5, help='Perform binning with the given bin size. Bin size does not have to be a integer divisor of the number of samples. Defaults to 5')
+  parser.add_argument('-max_bins', type=int, default=601, help='Plot no more than this number of bins. Defaults to 601')
 
-  parser.add_argument('-max_bins', type=int, default=None, help='Plot no more than this number of bins')
   parser.add_argument('-pdf', action='store_true', default=False, help='Plot will be saved to PDF instead of being shown')
   parser.add_argument('-png', action='store_true', default=False, help='Plot will be saved to PNG instead of being shown')
 
   parser.add_argument('-no_debug', action='store_true', default=False, help='Debugging information at lower-left will not be plotted.')
 
   parser.add_argument('-max_tduration', type=float, help='Sets the maximum duration in seconds')
+
+  parser.add_argument('-highpass', type=float, default=0, help='Removes signals below the specified frequency (Hz)')
 
   parser.add_argument('-power_only', action='store_true', default=False, help='When given only the power-over-time series is plotted')
   parser.add_argument('-power_fit', type=int, default=-1, help='When >0, a polynomial of order n will be fitted to the data')
