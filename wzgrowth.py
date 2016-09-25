@@ -133,7 +133,15 @@ def remove_outliers(rdx_vec, back_rdx_vec):
   # also produces spikes. It hasn't changed anything, but ideally
   # we do something like a gradient analysis instead of pure stats
   back_rdx_mean = np.mean(back_rdx_vec)
-  back_rdx_std = np.std(back_rdx_vec)
+
+  # if back_rd_vec contains identical values then back_rdx_std is 0
+  # and everything back_rdx value is rejected as x<x is always false.
+  # I could fix the inequality, but I don't want to influence other
+  # existing results computed with the inequality in place, so we
+  # place a lower limit on the std instead. This won't affect
+  # existing calculations but will fix the outlier case
+  back_rdx_std = max(np.std(back_rdx_vec),1e-9)
+
   keep = back_rdx_vec < (back_rdx_mean + back_rdx_std*3)
 
   if sum(keep) != len(rdx_vec):
@@ -333,7 +341,7 @@ def main(scan_id=None, debug=False, suffix='', threshold=None):
 
   outputfile = scan_id + '-growth' + suffix + '.npz'
   np.savez_compressed(outputfile, **savedata)
-  p('Growth data saved to %s'%(outputfile))
+  print 'Growth data saved to %s'%(outputfile)
 
 def parse_commandline_arguments():
   parser = get_commandline_parser()
