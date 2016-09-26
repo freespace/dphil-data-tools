@@ -29,7 +29,7 @@ def _load_csv(csv_file):
         # from the first character of thesis_label
         nuclei_type = thesis_label[0]
 
-        data = map(float, (cav_energy_mV2s, deformation_um))
+        data = map(float, (cav_energy_V2s, deformation_um))
         grp = None
         if nuclei_type == 'C':
           grp = unloaded_DSEPC_group
@@ -60,18 +60,20 @@ def main(csv_file=None, pdf=False, png=False, legend=False):
     cav_e_mean = np.mean(cav_e)
     deform_mean = np.mean(deform)
 
-    print 'group %s: mean energy=%.2f mV^2 s, mean deformation=%.2f'%(label, cav_e_mean, deform_mean)
+    print 'group %s: mean energy=%.2f V^2 s, mean deformation=%.2f'%(label, cav_e_mean, deform_mean)
 
     plt.plot(cav_e, deform, markersize=10, marker=marker, linestyle='None', label=label)
     plt.plot(cav_e_mean, deform_mean, marker=marker, linestyle='None', markersize=15, color='k',
                                                                                       markerfacecolor='None',
                                                                                       markeredgewidth=2)
 
+    plt.gca().get_xaxis().get_major_formatter().set_powerlimits((0, 0))
+
   plot_grp(unloaded_DSEPC_group, '^', 'C')
   plot_grp(PLGA_group, 'o', 'P')
   plot_grp(PLGA_loaded_DSEPC_group, 's', 'L')
 
-  plt.xlabel('Cavitation Energy ($\mathrm{mV}^2\mathrm{s}$)')
+  plt.xlabel('Cavitation Energy ($\mathrm{V}^2\mathrm{s}$)')
   plt.ylabel('Deformation Size (um)')
 
   if legend:
