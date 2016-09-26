@@ -22,8 +22,8 @@ def main(**kwargs):
     from wzmeta import get_meta
     meta = get_meta(datafile)
 
-    kwargs['pixel_height'] = meta['wstep']
-    kwargs['pixel_width'] = meta['zstep']
+    kwargs['pixel_height'] = meta['wstep_um']
+    kwargs['pixel_width'] = meta['zstep_um']
 
     statsvec = get_sum(datafile, **kwargs)
 
@@ -49,7 +49,7 @@ def main(**kwargs):
 
       print '\t'.join(map(str, valuesvec))
 
-def get_sum(datafile, vdivide=1, vindex=None, pixel_height=1, pixel_width=1, coeff=1):
+def get_sum(datafile, vdivide=1, vindex=None, pixel_height=1, pixel_width=1, coeff=1, row_step=1):
   """
   Returns a list of (section-index, section-sum, section-shape) tuples, where
   sections are equal height divisions within an image. The number of sections
@@ -67,11 +67,19 @@ def get_sum(datafile, vdivide=1, vindex=None, pixel_height=1, pixel_width=1, coe
   npzfile = np.load(datafile)
   scandata = npzfile['scandata'].item()
 
+  import sys
+  sys.stderr.write('Processing %s\n'%(datafile))
+
   if scandata.w is None:
     print datafile + ' does not define w axis, not processing.'
     return None
 
-  nrows, ncols = scandata.matrix.shape
+  mat = scandata.matrix
+  if row_step > 1:
+    mat = np.delete(mat, list(range(0, mat.shape[0], row_step)), axis=0)
+    pixel_height *= row_step
+
+  nrows, ncols = mat.shape
 
   # note that this is an integer division, so will under-estimate
   # the number of rows needed by up to 1
@@ -96,7 +104,7 @@ def get_sum(datafile, vdivide=1, vindex=None, pixel_height=1, pixel_width=1, coe
     else:
       endrow = nrows
 
-    section = scandata.matrix[startrow:endrow,:]
+    section = mat[startrow:endrow,:]
 
     shape = (section.shape[0] * pixel_height,
              section.shape[1] * pixel_width)
@@ -117,6 +125,7 @@ def get_commandline_parser():
   parser.add_argument('-vindex', type=int, default=None, help='If given in combination with vdivide, only the specified section (1...) will be summed.')
   parser.add_argument('-scan_interval', type=float, default=None, help='If given output will contain an additional column, Elapsed time, with a value for each scan of scan_interval*n, where n (0...) is index of the file amongst specified files')
   parser.add_argument('-coeff', type=float, default=1, help='Multiplies the result by the given coefficient')
+  parser.add_argument('-row_step', type=int, default=1, help='Step size when processing rows. row_step=2 skips every other row')
   parser.add_argument('datafiles', nargs='+', help='WZ data files')
 
   return parser
