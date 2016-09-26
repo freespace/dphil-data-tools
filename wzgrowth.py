@@ -78,7 +78,7 @@ def get_npz(scan_id, scan_number):
 
   return None
 
-def estimate_threshold(scan_id):
+def estimate_threshold(scan_id, channel_width_um):
   npz = get_npz(scan_id, 0)
   from dataloader import DataLoader
   loader = DataLoader(npz)
@@ -111,7 +111,6 @@ def estimate_threshold(scan_id):
 
   rdx_centre = rdx_sum / 2 / exceed_cnt
   print rdx_centre
-  channel_width_um = 370
   zstep_um = scandata.zpositionvec[1] - scandata.zpositionvec[0]
   channel_width_idx = channel_width_um / zstep_um
   rdx_thres = rdx_centre - channel_width_idx // 2
@@ -156,6 +155,8 @@ def remove_outliers(rdx_vec, back_rdx_vec):
   rdx_threshold = min_rdx + 0.5*(max_rdx - min_rdx)
   if sum(rdx_vec < rdx_threshold) == 1:
     keep = rdx_vec > min_rdx
+    if sum(keep) != len(rdx_vec):
+      p('x', False)
     rdx_vec = rdx_vec[keep]
 
   return rdx_vec
@@ -288,7 +289,7 @@ def compute_growth(npz, debug, threshold=None):
   ret = [t] + min_z_vec + [threshold]
   return np.asarray(ret)
 
-def main(scan_id=None, debug=False, suffix='', threshold=None):
+def main(scan_id=None, debug=False, suffix='', threshold=None, channel_width_um=None):
   # keep reading scans until we run out
   scan_num = 0
   done = False
@@ -296,7 +297,7 @@ def main(scan_id=None, debug=False, suffix='', threshold=None):
   row_vec = list()
 
   if threshold is None:
-    threshold = estimate_threshold(scan_id)
+    threshold = estimate_threshold(scan_id, channel_width_um)
 
   p('Threshold=%.2f'%(threshold))
 
@@ -354,6 +355,7 @@ def get_commandline_parser():
   parser.add_argument('-debug', action='store_true', help='If given the sections boundaries will be shown for each image.')
   parser.add_argument('-suffix', type=str, default='', help='If given will be appeneded to output filename')
   parser.add_argument('-threshold', type=float, default=None, help='If given will be used as the threshold when computing where the fluorescence front is')
+  parser.add_argument('-channel_width_um', type=float, default=370, help='Specifies the width of the channel to use when deriving reference fluorescence value. Ignored if -threshold is given. Default: 370 um')
   parser.add_argument('scan_id', type=str, help='Scan ID of scan to measure')
 
   return parser
