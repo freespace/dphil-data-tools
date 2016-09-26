@@ -32,7 +32,7 @@ matplotlib.use('Qt4Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 
-def convert(datafile, noadjust):
+def convert(datafile, noadjust, row_step):
   npzfile = np.load(datafile)
   scandata = npzfile['scandata'].item()
 
@@ -67,6 +67,13 @@ def convert(datafile, noadjust):
   # the way we sum multiple readings to implement exposure control, we in fact
   # treat all integers as unsigned and add them together.
   pix = scandata.matrix
+
+  if row_step > 1:
+    pix = np.delete(pix, list(range(0, pix.shape[0], row_step)), axis=0)
+
+    # have to update wvec and pixel height as well
+    wvec = np.delete(wvec, list(range(0, wvec.shape[0], row_step)), axis=0)
+    ph = wrange/(len(wvec))
 
   intpix = (2**16-1)*pix/20
   intpix = intpix.astype(np.uint16)
@@ -162,10 +169,11 @@ def convert(datafile, noadjust):
 def main(**kwargs):
   noadjust = kwargs['noadjust']
   datafiles = kwargs['datafiles']
+  row_step = kwargs['row_step']
 
   for datafile in datafiles:
     print 'Converting',datafile
-    convert(datafile, noadjust)
+    convert(datafile, noadjust, row_step)
 
 def parse_commandline_arguments():
   parser = get_commandline_parser()
@@ -176,6 +184,10 @@ def get_commandline_parser():
   import argparse
   parser = argparse.ArgumentParser(description='Converts 2D SIOS scans to TIFF images')
 
+  parser.add_argument('-row_step',
+                      type=int,
+                      default=1,
+                      help='Step size when processing rows. row_step=2 skips every other row')
   parser.add_argument('-noadjust',
                       action='store_true',
                       help='No adjustments are made to the image after converting from matrix.')
