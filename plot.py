@@ -491,6 +491,10 @@ class Plot(object):
       for vl in self.vline:
         ax.vlines(vl, ylim[0], ylim[1], linestyles='solid', colors=['red'])
 
+    if self.hline is not None:
+      for hl in self.hline:
+        ax.hlines(hl, xlim[0], xlim[1], linestyles='solid', colors=['red'])
+
     if self.normalise:
       ax.hlines(0.5, xlim[0], xlim[1], linestyles='dotted', colors=['gray'])
 
@@ -579,6 +583,7 @@ def get_commandline_parser():
   parser.add_argument('-grid', action='store_true', default=False, help='If given, vertical grid will be added.')
 
   parser.add_argument('-vline', type=float, nargs='+', default=None, help='If given, a vertical line in red will be plotted at the specified x coordinate. Specify multiple x values to plot multiple lines.')
+  parser.add_argument('-hline', type=float, nargs='+', default=None, help='If given, a horizontal line in red will be plotted at the specified y coordinate. Specify multiple y values to plot multiple lines.')
 
   parser.add_argument('-fwhm', action='store_true', default=False, help='If given, FWHM will be computed and plotted.')
   parser.add_argument('-figsize', type=float, nargs=2, default=None, help='If given, the figure size will be set as given, in inches')
