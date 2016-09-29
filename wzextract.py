@@ -48,16 +48,22 @@ def main(**kwargs):
     zvec = mat[zindex,:]
 
     if debug:
+      import matplotlib.pyplot as plt
+      import matplotlib_setup
+      from utils import keypress
       # set the selected index to the maximum value so when plotted it saturates
-      mat[zindex,:] = np.full(zvec.shape, 2**16-1, dtype='int16')
+      mat[zindex,:] = np.full(zvec.shape, mat.max())
+      extent = [scandata.zpositionvec.min(), scandata.zpositionvec.max()]
+      extent += [scandata.wpositionvec.min(), scandata.wpositionvec.max()]
 
-      # can't do **npzfile b/c attributes are always new objects that
-      # are read from file on demand. See
-      # http://stackoverflow.com/a/37114439/8297
-      npzdict = dict(npzfile)
-      npzdict['scandata'] = scandata
-      np.savez(fname, **npzdict)
-      print 'Saved debug file for %s scan index %d to %s'%(axis, zindex, fname)
+      plt.imshow(mat, interpolation='None', extent=extent, cmap='gray')
+      plt.colorbar()
+      plt.gcf().canvas.mpl_connect('key_press_event', keypress)
+      plt.xlabel('Z Position (um)')
+      plt.ylabel('X Position (um)')
+
+      plt.show()
+      plt.close()
     else:
       if transpose:
         zposvec = scandata.wpositionvec
