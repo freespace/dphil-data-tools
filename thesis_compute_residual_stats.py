@@ -23,22 +23,22 @@ def compute(growth_npz, debug):
 
   # we capture 1 scans extra of information, so ignore it
   tvec = mat[:-1, 0]
-  movement_vec = mat[:-1, 5]
+  residual_vec = mat[:-1, 5]
 
   dt = (tvec[2]-tvec[0])/2
 
   US_exp_window = 10 * 60 // dt
 
-  n = (movement_vec.size - US_exp_window) // 2
+  n = (residual_vec.size - US_exp_window) // 2
 
-  movement_vec_pre_US = movement_vec[:n]
-  movement_vec_post_US = movement_vec[-n:]
+  residual_vec_pre_US = residual_vec[:n]
+  residual_vec_post_US = residual_vec[-n:]
 
-  u0 = np.mean(movement_vec_pre_US)
-  sd0 = np.std(movement_vec_pre_US)
+  u0 = np.mean(residual_vec_pre_US)
+  sd0 = np.std(residual_vec_pre_US)
 
-  u1 = np.mean(movement_vec_post_US)
-  sd1 = np.std(movement_vec_post_US)
+  u1 = np.mean(residual_vec_post_US)
+  sd1 = np.std(residual_vec_post_US)
 
   print growth_npz
   print '\tMean residual up to',(tvec[n-1] - tvec[0])/60, 'min'
@@ -48,26 +48,30 @@ def compute(growth_npz, debug):
   print '\tMean residual from',(tvec[-n] - tvec[0])/60, 'min'
   print bcolors.OKGREEN + '\t\t%.2f'%(u1), '\tSD %.2f'%(sd1), bcolors.ENDC
 
+  print '\tu_1 - u_0'
+  # http://stattrek.com/sampling/difference-in-means.aspx?tutorial=ap
+  sd_diff = (sd0**2/residual_vec_pre_US.size + sd1**2/residual_vec_post_US.size)**0.5
+  print bcolors.WARNING + '\t\t%.2f'%(u1-u0), '\tSD=%.2f'%(sd_diff), bcolors.ENDC
+
+  import scipy.stats as stats
+  print '\tDependent t-test'
+  t, p = stats.ttest_rel(residual_vec_pre_US, residual_vec_post_US)
+  print '\t\t'+bcolors.FAIL, 't=%.2f, p=%.4f'%(t, p), bcolors.ENDC
+
   if debug:
     import matplotlib.pyplot as plt
     import matplotlib_setup
     from utils import keypress
 
-    plt.plot(movement_vec_pre_US)
+    plt.plot(residual_vec_pre_US, label='pre')
     plt.hold(True)
-    plt.plot(movement_vec_post_US)
+    plt.plot(residual_vec_post_US, label='post')
+    plt.legend()
 
     plt.gcf().canvas.mpl_connect('key_press_event', keypress)
 
     plt.show()
     plt.close()
-
-  #from scipy.stats import ttest_rel
-  #
-  #t, prob = ttest_rel(d_movement_vec_pre_US, d_movement_vec_post_US)
-  #
-  #print bcolors.OKGREEN,'\tt=',t, 'df=', d_movement_vec_post_US.size - 1, 'p=',prob, bcolors.ENDC
-
 
 def main(growth_npz_vec, debug=False):
   for growth_npz in growth_npz_vec:

@@ -5,6 +5,16 @@ import numpy as np
 
 import dphil_paths
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 def compute(growth_npz, debug):
   from dataloader import DataLoader
 
@@ -15,43 +25,59 @@ def compute(growth_npz, debug):
   tvec = mat[:-1, 0]
   movement_vec = mat[:-1, 5]
 
-  d_movement_vec = movement_vec[1:] - movement_vec[:-1]
-  
+  d_residual_vec = movement_vec[1:] - movement_vec[:-1]
+
   dt = (tvec[2]-tvec[0])/2
 
   US_exp_window = 10 * 60 // dt
 
-  n = (d_movement_vec.size - US_exp_window) // 2
+  n = (d_residual_vec.size - US_exp_window) // 2
 
-  d_movement_vec_pre_US = d_movement_vec[:n]
-  d_movement_vec_post_US = d_movement_vec[-n:]
+  d_residual_vec_pre_US = d_residual_vec[:n]
+  d_residual_vec_post_US = d_residual_vec[-n:]
+
+  def mean_std(x):
+    return np.mean(x), np.std(x)
+  u_d0, sd0 = mean_std(d_residual_vec_pre_US)
+  u_d1, sd1 = mean_std(d_residual_vec_post_US)
 
   print growth_npz
   print '\tMean gradient up to',(tvec[n-1] - tvec[0])/60, 'min'
-  print '\t\t',np.mean(d_movement_vec_pre_US), 'SD', np.std(d_movement_vec_pre_US)
+  print bcolors.OKGREEN + '\t\t%.2f'%(u_d0), 'SD %.2f'%(sd0), bcolors.ENDC
 
 
   print '\tMean gradient from',(tvec[-n] - tvec[0])/60, 'min'
-  print '\t\t',np.mean(d_movement_vec_post_US), 'SD', np.std(d_movement_vec_post_US)
+  print bcolors.OKGREEN + '\t\t%.2f'%(u_d1), 'SD %.2f'%(sd1), bcolors.ENDC
+
+  print '\tu_1 - u_0'
+  # http://stattrek.com/sampling/difference-in-means.aspx?tutorial=ap
+  sd_diff = (sd0**2/d_residual_vec_pre_US.size + sd1**2/d_residual_vec_post_US.size)**0.5
+  print bcolors.WARNING + '\t\t%.2f'%(u_d1-u_d0), '\tSD=%.2f'%(sd_diff), bcolors.ENDC
+
+  import scipy.stats as stats
+  print '\tDependent t-test'
+  t, p = stats.ttest_rel(d_residual_vec_pre_US, d_residual_vec_post_US)
+  print '\t\t'+bcolors.FAIL, 't=%.2f, p=%.4f'%(t, p), bcolors.ENDC
 
   if debug:
     import matplotlib.pyplot as plt
     import matplotlib_setup
     from utils import keypress
 
-    plt.plot(d_movement_vec_pre_US)
+    plt.plot(d_residual_vec_pre_US)
     plt.hold(True)
-    plt.plot(d_movement_vec_post_US)
+    plt.plot(d_residual_vec_post_US)
 
     plt.gcf().canvas.mpl_connect('key_press_event', keypress)
 
     plt.show()
     plt.close()
 
-  from scipy.stats import ttest_rel
-
-  t, prob = ttest_rel(d_movement_vec_pre_US, d_movement_vec_post_US)
-  print '\tt=',t,'p=',prob
+  #from scipy.stats import ttest_rel
+  #
+  #t, prob = ttest_rel(d_residual_vec_pre_US, d_residual_vec_post_US)
+  #
+  #print bcolors.OKGREEN,'\tt=',t, 'df=', d_residual_vec_post_US.size - 1, 'p=',prob, bcolors.ENDC
 
 
 def main(growth_npz_vec, debug=False):
