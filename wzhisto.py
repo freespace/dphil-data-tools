@@ -20,7 +20,7 @@ def plot_histo(axis, values, vline, with_labels=True, bins=50):
     axis.vlines(vline, 0, counts.max(), colors=['red'], linewidth=1)
 
   if with_labels:
-    axis.set_xlabel('PMT Output (V)')
+    axis.set_xlabel('Fluorescence Value (a.u.)')
     axis.set_ylabel('Count')
 
   return counts, bins
