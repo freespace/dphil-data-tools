@@ -58,7 +58,7 @@ def find_width(xvec, yvec, ytarget):
     # backwards
     return abs(end - start), start, end
   else:
-    return None
+    return None, None, None
 
 def get_stats(xvec, yvec, noauc=False, asdict=False):
   """
@@ -165,6 +165,9 @@ def print_stats(**kwargs):
     if statkeys is not None:
       sdict = get_stats(xvec, yvec, asdict=True)
       colheaders = statkeys
+      for sk in statkeys:
+        assert sk in sdict, 'Unknown stat %s, available: %s'%(sk, sdict.keys())
+
       s = map(lambda x: sdict[x], statkeys)
     else:
       s = get_stats(xvec, yvec)
