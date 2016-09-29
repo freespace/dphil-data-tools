@@ -113,6 +113,9 @@ class Plot(object):
     if self.xlim is not None:
       suffix.append('%.2fX%.2f'%(self.xlim[0], self.xlim[1]))
 
+    if self.differentiate:
+      suffix.append('DY')
+
     if len(suffix):
       suffix = '-'.join(suffix)
       suffix = '-' + suffix
@@ -417,6 +420,12 @@ class Plot(object):
         yvec -= yvec.min()
         yvec /= yrange
 
+      if self.differentiate:
+        dy = yvec[1:] - yvec[:-1]
+        yvec = dy
+        xvec = xvec[1:]
+        print 'Differentiating'
+
       use_right = self.use_right_axis_for == csvfile
       self._plot_traces(lbl, xvec, yvec, tvec, yerr=yerr, use_right=use_right)
 
@@ -493,7 +502,7 @@ class Plot(object):
 
     if self.hline is not None:
       for hl in self.hline:
-        ax.hlines(hl, xlim[0], xlim[1], linestyles='solid', colors=['red'])
+        ax.hlines(hl, xlim[0], xlim[1], linestyles='solid', colors=[self.hline_color])
 
     if self.normalise:
       ax.hlines(0.5, xlim[0], xlim[1], linestyles='dotted', colors=['gray'])
@@ -551,6 +560,8 @@ def get_commandline_parser():
   parser.add_argument('-xmultiplier', type=float, default=1, help='Value to multiplu x by before plotting. This happens after sub_x0.')
   parser.add_argument('-ymultiplier', type=float, default=1, help='Value to multiplu y by before plotting. This happens after sub_y0.')
 
+  parser.add_argument('-differentiate', action='store_true', help='If given the dy/dx plotted, where dy=dy[n]-dy[n-1], dx=x[n]-x[n-1]')
+
   parser.add_argument('-pdf', action='store_true', default=False, help='Plot will be saved to PDF instead of being shown')
   parser.add_argument('-png', action='store_true', default=False, help='Plot will be saved to PNG instead of being shown')
   parser.add_argument('-filename', default=None, type=str, help='Name of output file to write to. Defaults to name of the first and last csv file joined by double underscore (__)')
@@ -583,7 +594,8 @@ def get_commandline_parser():
   parser.add_argument('-grid', action='store_true', default=False, help='If given, vertical grid will be added.')
 
   parser.add_argument('-vline', type=float, nargs='+', default=None, help='If given, a vertical line in red will be plotted at the specified x coordinate. Specify multiple x values to plot multiple lines.')
-  parser.add_argument('-hline', type=float, nargs='+', default=None, help='If given, a horizontal line in red will be plotted at the specified y coordinate. Specify multiple y values to plot multiple lines.')
+  parser.add_argument('-hline', type=float, nargs='+', default=None, help='If given, a horizontal line in will be plotted at the specified y coordinate. Specify multiple y values to plot multiple lines.')
+  parser.add_argument('-hline_color', type=str, default='red', help='Specifies the colour of hlines, defaults to red')
 
   parser.add_argument('-fwhm', action='store_true', default=False, help='If given, FWHM will be computed and plotted.')
   parser.add_argument('-figsize', type=float, nargs=2, default=None, help='If given, the figure size will be set as given, in inches')
