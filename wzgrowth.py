@@ -205,8 +205,12 @@ def find_min_rdx(secidx, section, threshold):
       if modes >= 2:
         bad_row_sdx.append(sdx)
 
-    if len(bad_row_sdx):
+    # a single bad row is truly bad, 2 bad row is probably
+    # deformation
+    if len(bad_row_sdx) == 1:
       p('!', False)
+    else:
+      bad_row_sdx = []
 
     # find the proximal edge of the channel boundary
     rdx_vec = list()
