@@ -205,6 +205,9 @@ def find_min_rdx(secidx, section, threshold):
       if modes >= 2:
         bad_row_sdx.append(sdx)
 
+    if len(bad_row_sdx):
+      p('!', False)
+
     # find the proximal edge of the channel boundary
     rdx_vec = list()
     for sdx, row in enumerate(section):
