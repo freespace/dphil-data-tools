@@ -242,17 +242,17 @@ def find_min_rdx(secidx, section, threshold):
       if len(crossings):
         back_rdx_vec.append(row.size - crossings[-1] - 1)
 
-    assert len(rdx_vec)
-    assert len(back_rdx_vec) == len(rdx_vec)
+    if len(rdx_vec) == 0:
+      return None
+    else:
+      rdx_vec = np.asarray(rdx_vec)
+      back_rdx_vec = np.asarray(back_rdx_vec)
 
-    rdx_vec = np.asarray(rdx_vec)
-    back_rdx_vec = np.asarray(back_rdx_vec)
+      rdx_vec = remove_outliers(rdx_vec, back_rdx_vec)
 
-    rdx_vec = remove_outliers(rdx_vec, back_rdx_vec)
-
-    min_rdx = rdx_vec.min()
-    assert min_rdx is not None
-    return min_rdx
+      min_rdx = rdx_vec.min()
+      assert min_rdx is not None
+      return min_rdx
 
 def compute_growth(npz, debug, threshold=None):
   scandata = load_scandata_with_correction(npz)
@@ -302,6 +302,9 @@ def compute_growth(npz, debug, threshold=None):
       p('.', False)
 
     min_rdx = find_min_rdx(secidx, section, threshold)
+    if min_rdx is None:
+      min_rdx = find_min_rdx(secidx, section, section.max()*0.5)
+      p('0', False)
 
     min_z = scandata.zpositionvec_corrected[min_rdx]
     min_z_vec.append(min_z)
@@ -325,7 +328,7 @@ def compute_growth(npz, debug, threshold=None):
       mat[startrow:endrow,min_rdx_vec[secidx]+1] = np.ones(endrow-startrow) * mat.max()
 
     extent = [scandata.zpositionvec_corrected.min(), scandata.zpositionvec_corrected.max()]
-    extent += [scandata.wpositionvec_corre.min(), scandata.wpositionvec.max()]
+    extent += [scandata.wpositionvec.min(), scandata.wpositionvec.max()]
 
     plt.imshow(mat, interpolation='None', extent=extent)
     plt.colorbar()
