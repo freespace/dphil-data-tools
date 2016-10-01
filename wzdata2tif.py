@@ -32,7 +32,7 @@ matplotlib.use('Qt4Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 
-def convert(datafile, noadjust, row_step):
+def convert(datafile, non_square_pixel=False, row_step=1, not_in_water=False):
   npzfile = np.load(datafile)
   scandata = npzfile['scandata'].item()
 
@@ -43,10 +43,11 @@ def convert(datafile, noadjust, row_step):
   zvec = scandata.zpositionvec
   # correct for the fact these scans are taken in water, where the focus
   # travels 1.33 mm for every 1 mm the objective travels in air
-  z0 = zvec[0]
-  zvec -= z0
-  zvec *= 1.33
-  zvec += z0
+  if not not_in_water:
+    z0 = zvec[0]
+    zvec -= z0
+    zvec *= 1.33
+    zvec += z0
 
   wvec = scandata.wpositionvec
 
@@ -83,7 +84,7 @@ def convert(datafile, noadjust, row_step):
   from PIL import Image
   im = Image.fromstring('I;16', (w, h), intpix.tostring())
 
-  if not noadjust:
+  if not non_square_pixel:
     # XXX One of the things we need to do is account for the fact that our
     # pixels out of SIOS can be non-square, e.g. 20 um in Z and 50 um in X.
     # Since images are displayed with square pixels, this means that without
@@ -111,9 +112,8 @@ def convert(datafile, noadjust, row_step):
       im = im.resize(map(int,newsize), Image.NEAREST)
 
   print 'Image width=%.2f um, height=%.2f um'%(zrange, wrange)
-  print '  pixel width=%.2f um, height=%.2f um, adjusted=%s'%(pw, ph, not noadjust)
-  if noadjust:
-    print '  pixel aspect ratio=%.2f (h:w=%.2f)'%(pw/ph, ph/pw)
+  print '  pixel width=%.2f um, height=%.2f um'%(pw, ph)
+  print '  non_square_pixel=%s not_in_water=%s'%(non_square_pixel, not_in_water)
 
   if scandata.w == 'Y':
     print '  YZ scan detected, inverting image vertically'
@@ -138,7 +138,8 @@ def convert(datafile, noadjust, row_step):
                   starttime=ctime(tstart),
                   endtime=ctime(tend),
                   wstep=wvec[1]-wvec[0],
-                  adjusted=not noadjust,
+                  square_pixel=not non_square_pixel,
+                  in_water=not not_in_water,
                   comments=scandata.comments)
 
   from os.path import splitext, extsep, basename
@@ -167,13 +168,10 @@ def convert(datafile, noadjust, row_step):
   print 'TIFF written to', outfile
 
 def main(**kwargs):
-  noadjust = kwargs['noadjust']
-  datafiles = kwargs['datafiles']
-  row_step = kwargs['row_step']
-
+  datafiles = kwargs.pop('datafiles')
   for datafile in datafiles:
     print 'Converting',datafile
-    convert(datafile, noadjust, row_step)
+    convert(datafile, **kwargs)
 
 def parse_commandline_arguments():
   parser = get_commandline_parser()
@@ -188,9 +186,13 @@ def get_commandline_parser():
                       type=int,
                       default=1,
                       help='Step size when processing rows. row_step=2 skips every other row')
-  parser.add_argument('-noadjust',
+  parser.add_argument('-non_square_pixel',
                       action='store_true',
-                      help='No adjustments are made to the image after converting from matrix.')
+                      help='If given pixels will be non-square')
+
+  parser.add_argument('-not_in_water',
+                      action='store_true',
+                      help='If given the refractive mismatch correction of 1.33 is not applied')
   parser.add_argument('datafiles', nargs='+', help='WZ data files')
 
   return parser
