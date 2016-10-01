@@ -110,11 +110,14 @@ def estimate_threshold(scan_id, channel_width_um):
         break
 
   rdx_centre = rdx_sum / 2 / exceed_cnt
-  print rdx_centre
   zstep_um = scandata.zpositionvec[1] - scandata.zpositionvec[0]
   channel_width_idx = channel_width_um / zstep_um
   rdx_thres = rdx_centre - channel_width_idx // 2
 
+  print 'Channel centre at', rdx_centre * zstep_um + scandata.zpositionvec[0]
+  print 'Proximal channel wall at', rdx_thres * zstep_um + scandata.zpositionvec[0]
+  print 'Point sampled value',ref_sec[0][rdx_thres]
+  print '\t',ref_sec[0][rdx_thres-1:rdx_thres+2]
   thres_sum = 0
   for row in ref_sec:
     thres_sum += row[rdx_thres]
@@ -184,6 +187,11 @@ def compute_growth(npz, debug, threshold=None):
   sec_ratio = (1,2,1)
   sec_boundary_vec = list()
 
+  def zdx_to_pos(zdx):
+    zstart = scandata.zpositionvec[0]
+    zstep_um = scandata.zpositionvec[1] - zstart
+    return zdx * zstep_um + zstart
+
   startrow = 0
   for secidx, rowspan in zip(xrange(nsections), sec_ratio):
     # because of integer truncation in the calculation of rowspersection,
@@ -208,28 +216,56 @@ def compute_growth(npz, debug, threshold=None):
       p('.', False)
 
     # basic protection against 'hot' pixels. The mechanism
-    # employed here allows us to detect a crossing with 1
+    # employed here allows us to detect a crossings with 1
     # event even when we want 2 ideally
     exceed_threshold = 2
 
+    # bad rows are those that have 2 peaks where the
+    # row maximum value is reached
+    bad_row_sdx = list()
+    for sdx, row in enumerate(section):
+      row_max = row.max()
+      crossings = list()
+      modes = 0
+      inmode = False
+      for rdx, val in enumerate(row):
+        if val == row_max and not inmode:
+          modes += 1
+          inmode = True
+
+        # add some hythersis to ignore jitters
+        if val < row_max*0.8:
+          inmode = False
+
+      if modes >= 2:
+        bad_row_sdx.append(sdx)
+
+    # find the proximal edge of the channel boundary
     rdx_vec = list()
-    for row in section:
+    for sdx, row in enumerate(section):
+      if sdx in bad_row_sdx:
+        continue
+
       crossings = list()
       for rdx, val in enumerate(row):
-        if val >= threshold:
+        if val > threshold:
           crossings.append(rdx)
 
         if len(crossings) >= exceed_threshold:
           break
 
       if len(crossings):
+        #if secidx == 0:
+        #  print zdx_to_pos(crossings[-1]), val
         rdx_vec.append(crossings[-1])
 
     # hot spikes are symmetrical about channel center while
     # deformation due to US isn't, so we need to find the boundary
     # on both sides of the channel
     back_rdx_vec = list()
-    for row in section:
+    for sdx, row in enumerate(section):
+      if sdx in bad_row_sdx:
+        continue
       crossings = list()
       for rdx, val in enumerate(reversed(row)):
         if val >= threshold:
@@ -267,7 +303,7 @@ def compute_growth(npz, debug, threshold=None):
     for secidx in xrange(nsections):
       startrow, endrow = sec_boundary_vec[secidx]
 
-      mat[startrow] = np.ones(mat.shape[1])*mat.max()
+      #mat[startrow] = np.ones(mat.shape[1])*mat.max()
 
       mat[startrow:endrow,min_rdx_vec[secidx]] = np.ones(endrow-startrow) * mat.max()
       mat[startrow:endrow,min_rdx_vec[secidx]+1] = np.ones(endrow-startrow) * mat.max()
