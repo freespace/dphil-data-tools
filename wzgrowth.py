@@ -44,11 +44,28 @@ from microscopy due
 (a) scattering due to optical depth and media
 (b) large FWHM
 (c) axial glare
+
+2016-10-01
+==========
+
+It was found that I had forgotten to apply the 1.33 axial scaling correction,
+so all previous results were under-reporting
 """
 
 import numpy as np
 
 import dphil_paths
+
+def load_scandata_with_correction(npzfilename):
+  from dataloader import DataLoader
+  loader = DataLoader(npzfilename)
+  scandata = loader.source_obj
+
+  # add on a new attribute, and never use zpositionvec again
+  scandata.zpositionvec_corrected = scandata.zpositionvec * 1.33
+  #p('Applied axial scaling correction')
+
+  return scandata
 
 def p(s,newline=True):
   import sys
@@ -80,9 +97,7 @@ def get_npz(scan_id, scan_number):
 
 def estimate_threshold(scan_id, channel_width_um):
   npz = get_npz(scan_id, 0)
-  from dataloader import DataLoader
-  loader = DataLoader(npz)
-  scandata = loader.source_obj
+  scandata = load_scandata_with_correction(npz)
   ref_sec = scandata.matrix[0:25,:]
 
   threshold = ref_sec.max() * 0.5
@@ -110,12 +125,12 @@ def estimate_threshold(scan_id, channel_width_um):
         break
 
   rdx_centre = rdx_sum / 2 / exceed_cnt
-  zstep_um = scandata.zpositionvec[1] - scandata.zpositionvec[0]
+  zstep_um = scandata.zpositionvec_corrected[1] - scandata.zpositionvec_corrected[0]
   channel_width_idx = channel_width_um / zstep_um
   rdx_thres = rdx_centre - channel_width_idx // 2
 
-  print 'Channel centre at', rdx_centre * zstep_um + scandata.zpositionvec[0]
-  print 'Proximal channel wall at', rdx_thres * zstep_um + scandata.zpositionvec[0]
+  print 'Channel centre at', rdx_centre * zstep_um + scandata.zpositionvec_corrected[0]
+  print 'Proximal channel wall at', rdx_thres * zstep_um + scandata.zpositionvec_corrected[0]
   print 'Point sampled value',ref_sec[0][rdx_thres]
   print '\t',ref_sec[0][rdx_thres-1:rdx_thres+2]
   thres_sum = 0
@@ -164,57 +179,7 @@ def remove_outliers(rdx_vec, back_rdx_vec):
 
   return rdx_vec
 
-
-def compute_growth(npz, debug, threshold=None):
-  from dataloader import DataLoader
-  loader = DataLoader(npz)
-  scandata = loader.source_obj
-
-  nrows, ncols = scandata.matrix.shape
-
-  # we deal with the 1:2:1 ratio by dividing into 4 and merging
-  # the center 2
-  nsubsections = 4
-  nsections = 3
-
-  # note that this is an integer division, so will under-estimate
-  # the number of rows needed by up to 1
-  rows_per_subsection = nrows // nsubsections
-
-  min_z_vec = list()
-  min_rdx_vec = list()
-
-  sec_ratio = (1,2,1)
-  sec_boundary_vec = list()
-
-  def zdx_to_pos(zdx):
-    zstart = scandata.zpositionvec[0]
-    zstep_um = scandata.zpositionvec[1] - zstart
-    return zdx * zstep_um + zstart
-
-  startrow = 0
-  for secidx, rowspan in zip(xrange(nsections), sec_ratio):
-    # because of integer truncation in the calculation of rowspersection,
-    # when we calculate the last section we need to take up any remainders
-    # by going all the way to the bottom
-    if secidx + 1 < nsections:
-      endrow = startrow + rows_per_subsection * rowspan
-    else:
-      endrow = nrows
-
-    section = scandata.matrix[startrow:endrow,:]
-    sec_boundary_vec.append((startrow, endrow))
-
-    # print section.shape
-    # update startrow for the next loop.
-    startrow = endrow + 1
-
-    if threshold is None:
-      threshold = section.max()*0.5
-      p('=', False)
-    else:
-      p('.', False)
-
+def find_min_rdx(secidx, section, threshold):
     # basic protection against 'hot' pixels. The mechanism
     # employed here allows us to detect a crossings with 1
     # event even when we want 2 ideally
@@ -248,7 +213,7 @@ def compute_growth(npz, debug, threshold=None):
 
       crossings = list()
       for rdx, val in enumerate(row):
-        if val > threshold:
+        if val >= threshold:
           crossings.append(rdx)
 
         if len(crossings) >= exceed_threshold:
@@ -287,7 +252,58 @@ def compute_growth(npz, debug, threshold=None):
 
     min_rdx = rdx_vec.min()
     assert min_rdx is not None
-    min_z = scandata.zpositionvec[min_rdx]
+    return min_rdx
+
+def compute_growth(npz, debug, threshold=None):
+  scandata = load_scandata_with_correction(npz)
+  nrows, ncols = scandata.matrix.shape
+
+  # we deal with the 1:2:1 ratio by dividing into 4 and merging
+  # the center 2
+  nsubsections = 4
+  nsections = 3
+
+  # note that this is an integer division, so will under-estimate
+  # the number of rows needed by up to 1
+  rows_per_subsection = nrows // nsubsections
+
+  min_z_vec = list()
+  min_rdx_vec = list()
+
+  sec_ratio = (1,2,1)
+  sec_boundary_vec = list()
+
+  def zdx_to_pos(zdx):
+    zstart = scandata.zpositionvec_corrected[0]
+    zstep_um = scandata.zpositionvec_corrected[1] - zstart
+    return zdx * zstep_um + zstart
+
+  startrow = 0
+  for secidx, rowspan in zip(xrange(nsections), sec_ratio):
+    # because of integer truncation in the calculation of rowspersection,
+    # when we calculate the last section we need to take up any remainders
+    # by going all the way to the bottom
+    if secidx + 1 < nsections:
+      endrow = startrow + rows_per_subsection * rowspan
+    else:
+      endrow = nrows
+
+    section = scandata.matrix[startrow:endrow,:]
+    sec_boundary_vec.append((startrow, endrow))
+
+    # print section.shape
+    # update startrow for the next loop.
+    startrow = endrow + 1
+
+    if threshold is None:
+      threshold = section.max()*0.5
+      p('=', False)
+    else:
+      p('.', False)
+
+    min_rdx = find_min_rdx(secidx, section, threshold)
+
+    min_z = scandata.zpositionvec_corrected[min_rdx]
     min_z_vec.append(min_z)
 
     min_rdx_vec.append(min_rdx)
@@ -308,8 +324,8 @@ def compute_growth(npz, debug, threshold=None):
       mat[startrow:endrow,min_rdx_vec[secidx]] = np.ones(endrow-startrow) * mat.max()
       mat[startrow:endrow,min_rdx_vec[secidx]+1] = np.ones(endrow-startrow) * mat.max()
 
-    extent = [scandata.zpositionvec.min(), scandata.zpositionvec.max()]
-    extent += [scandata.wpositionvec.min(), scandata.wpositionvec.max()]
+    extent = [scandata.zpositionvec_corrected.min(), scandata.zpositionvec_corrected.max()]
+    extent += [scandata.wpositionvec_corre.min(), scandata.wpositionvec.max()]
 
     plt.imshow(mat, interpolation='None', extent=extent)
     plt.colorbar()
