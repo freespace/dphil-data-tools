@@ -40,7 +40,7 @@ def convert(datafile, non_square_pixel=False, row_step=1, not_in_water=False):
     print datafile + ' does not define w axis, not processing.'
     return None
 
-  zvec = scandata.zpositionvec
+  zvec = scandata.zpositionvec_raw
   # correct for the fact these scans are taken in water, where the focus
   # travels 1.33 mm for every 1 mm the objective travels in air
   if not not_in_water:
