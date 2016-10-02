@@ -252,6 +252,7 @@ def plot_spectrogram(**cmdargs):
   ancillary_ylabel = cmdargs['ancillary_ylabel']
   ancillary_ylim = cmdargs['ancillary_ylim']
   ancillary_hline = cmdargs['ancillary_hline']
+  ancillary_xoffset = cmdargs['ancillary_xoffset']
 
   if ancillary_data:
     datafile = ancillary_data
@@ -264,7 +265,8 @@ def plot_spectrogram(**cmdargs):
 
     from dataloader import DataLoader
     loader = DataLoader(datafile)
-    xvec = loader.matrix[:,xindex-1]
+
+    xvec = loader.matrix[:,xindex-1] + ancillary_xoffset
     yvec = loader.matrix[:,yindex-1]
 
     ax = plt.gca()
@@ -377,6 +379,7 @@ def get_commandline_parser():
   parser.add_argument('-ancillary_ylabel', type=str, default='', help='Specifies y label for ancillary data')
   parser.add_argument('-ancillary_ylim', type=float, nargs=2, help='Set y limits of right axis for ancillary data')
   parser.add_argument('-ancillary_hline', type=float, help='Adds a horizontal line to the ancillary plot')
+  parser.add_argument('-ancillary_xoffset', type=float, help='Offset added to x values of ancillary data')
 
   parser.add_argument('-head_skip', type=int, default=0, help='Number of files to skip before head of the queue. Files will be sorted before skip is applied. Negative values are allowed, in which case it turns into tail skip')
 
