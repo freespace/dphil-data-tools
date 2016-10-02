@@ -98,8 +98,14 @@ class Plot(object):
     if self.register_on_ymax:
       suffix.append('REGYMAX')
 
+    if self.xoffset != 1.0:
+      suffix.append('XOFF')
+
     if self.ymultiplier != 1.0:
       suffix.append('YMULT')
+
+    if self.xmultiplier != 1.0:
+      suffix.append('XMULT')
 
     if self.yindex is not 2:
       suffix.append('YIDX%d'%(self.yindex))
@@ -412,6 +418,8 @@ class Plot(object):
       if self.sub_y0:
         yvec -= yvec[0]
 
+      xvec += self.xoffset
+
       xvec *= self.xmultiplier
       yvec *= self.ymultiplier
 
@@ -556,6 +564,8 @@ def get_commandline_parser():
   parser.add_argument('-sub_y0', action='store_true', help='If given, the first y value is subtracted from all y values')
 
   parser.add_argument('-register_on_ymax', action='store_true', help='If given, the x value at which y is maximum will be subtracted from all x value, effectively putting the maximum y value at x=0')
+
+  parser.add_argument('-xoffset', type=float, default=0, help='Value to add to all x values. Applied before xmultiplier.')
 
   parser.add_argument('-xmultiplier', type=float, default=1, help='Value to multiplu x by before plotting. This happens after sub_x0.')
   parser.add_argument('-ymultiplier', type=float, default=1, help='Value to multiplu y by before plotting. This happens after sub_y0.')
