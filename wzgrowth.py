@@ -50,6 +50,12 @@ from microscopy due
 
 It was found that I had forgotten to apply the 1.33 axial scaling correction,
 so all previous results were under-reporting
+
+2016-10-01
+==========
+
+Axial scaling correction is now built into scandata as of commit 16e1427,
+and is thus removed from here.
 """
 
 import numpy as np
@@ -60,10 +66,6 @@ def load_scandata_with_correction(npzfilename):
   from dataloader import DataLoader
   loader = DataLoader(npzfilename)
   scandata = loader.source_obj
-
-  # add on a new attribute, and never use zpositionvec again
-  scandata.zpositionvec_corrected = scandata.zpositionvec * 1.33
-  #p('Applied axial scaling correction')
 
   return scandata
 
@@ -125,12 +127,12 @@ def estimate_threshold(scan_id, channel_width_um):
         break
 
   rdx_centre = rdx_sum / 2 / exceed_cnt
-  zstep_um = scandata.zpositionvec_corrected[1] - scandata.zpositionvec_corrected[0]
+  zstep_um = scandata.zpositionvec[1] - scandata.zpositionvec[0]
   channel_width_idx = channel_width_um / zstep_um
   rdx_thres = rdx_centre - channel_width_idx // 2
 
-  print 'Channel centre at', rdx_centre * zstep_um + scandata.zpositionvec_corrected[0]
-  print 'Proximal channel wall at', rdx_thres * zstep_um + scandata.zpositionvec_corrected[0]
+  print 'Channel centre at', rdx_centre * zstep_um + scandata.zpositionvec[0]
+  print 'Proximal channel wall at', rdx_thres * zstep_um + scandata.zpositionvec[0]
   print 'Point sampled value',ref_sec[0][rdx_thres]
   print '\t',ref_sec[0][rdx_thres-1:rdx_thres+2]
   thres_sum = 0
@@ -281,8 +283,8 @@ def compute_growth(npz, debug, threshold=None):
   sec_boundary_vec = list()
 
   def zdx_to_pos(zdx):
-    zstart = scandata.zpositionvec_corrected[0]
-    zstep_um = scandata.zpositionvec_corrected[1] - zstart
+    zstart = scandata.zpositionvec[0]
+    zstep_um = scandata.zpositionvec[1] - zstart
     return zdx * zstep_um + zstart
 
   startrow = 0
@@ -311,9 +313,9 @@ def compute_growth(npz, debug, threshold=None):
     min_rdx = find_min_rdx(secidx, section, threshold)
     if min_rdx is None:
       min_rdx = find_min_rdx(secidx, section, section.max()*0.5)
-      p('0', False)
+      p('o', False)
 
-    min_z = scandata.zpositionvec_corrected[min_rdx]
+    min_z = scandata.zpositionvec[min_rdx]
     min_z_vec.append(min_z)
 
     min_rdx_vec.append(min_rdx)
@@ -334,7 +336,7 @@ def compute_growth(npz, debug, threshold=None):
       mat[startrow:endrow,min_rdx_vec[secidx]] = np.ones(endrow-startrow) * mat.max()
       mat[startrow:endrow,min_rdx_vec[secidx]+1] = np.ones(endrow-startrow) * mat.max()
 
-    extent = [scandata.zpositionvec_corrected.min(), scandata.zpositionvec_corrected.max()]
+    extent = [scandata.zpositionvec.min(), scandata.zpositionvec.max()]
     extent += [scandata.wpositionvec.min(), scandata.wpositionvec.max()]
 
     plt.imshow(mat, interpolation='None', extent=extent)
