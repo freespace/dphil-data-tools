@@ -67,6 +67,8 @@ def load_scandata_with_correction(npzfilename):
   loader = DataLoader(npzfilename)
   scandata = loader.source_obj
 
+  assert scandata.axial_scaling_correction_applied, 'Your version of ScanData is too old!'
+
   return scandata
 
 def p(s,newline=True):
