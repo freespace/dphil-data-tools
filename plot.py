@@ -98,7 +98,7 @@ class Plot(object):
     if self.register_on_ymax:
       suffix.append('REGYMAX')
 
-    if self.xoffset != 1.0:
+    if self.xoffset != 0:
       suffix.append('XOFF')
 
     if self.ymultiplier != 1.0:
