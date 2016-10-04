@@ -22,11 +22,26 @@ def main(power_file=None, binsize=5, max_bins=601, head_skip=0):
   filenamelist.sort()
 
   energy = 0
+  starttime = None
+  endtime = None
   for fdx, fname in enumerate(filenamelist[head_skip:]):
     datadict = npz[fname].item()
     data = datadict['data']
     powervec = data[:,1]
     energy += sum(powervec)
+
+    header = datadict['header']
+    trigtimestr = header['trigtime']
+    from datetime import datetime
+    # really should standardise on a datetime format, e.g. ISO 8601. However
+    # python is unlikely to change how str(datetime) works so this is probably
+    # ok for now.
+    trigtime = datetime.strptime(trigtimestr, '%Y-%m-%d %H:%M:%S.%f')
+
+    if starttime is None:
+      starttime = trigtime
+
+    endtime = trigtime
 
     # binning makes no difference to the actual values, we need it
     # to know how many traces should we be integrating over
@@ -36,7 +51,18 @@ def main(power_file=None, binsize=5, max_bins=601, head_skip=0):
     if (fdx+1)%10 == 0:
       p('.')
 
-  print energy
+  pln('')
+  duration = endtime - starttime
+  duration = duration.total_seconds()
+  pln('\tDuration:%.2f'%(duration))
+
+  traces_per_second = len(filenamelist)/duration
+  pln('\tTraces per second %f'%(traces_per_second))
+
+  # need to divide by the number of traces per seconds as sometimes
+  # I capture 5/sec and sometime 1/s or 2.2/s. If I don't do this then
+  # the 5/sec data will naturally have more 'energy'
+  print energy / traces_per_second
 
 def parse_commandline_arguments():
   parser = get_commandline_parser()
