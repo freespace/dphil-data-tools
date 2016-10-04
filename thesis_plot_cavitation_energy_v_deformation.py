@@ -23,7 +23,7 @@ def _load_csv(csv_file):
         print header
       else:
         print fields
-        experiment_group, phantom_id, thesis_label, cav_energy_V2s, cav_energy_mV2s, deformation_um = fields
+        experiment_group, phantom_id, thesis_label, cav_energy_V2s, deformation_um = fields
 
         # group cav:deformation by cavitation nuclei type, which we can infer
         # from the first character of thesis_label
