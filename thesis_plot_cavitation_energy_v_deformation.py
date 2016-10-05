@@ -10,10 +10,7 @@ def _load_csv(csv_file):
   with open(csv_file) as f:
     content = f.read()
 
-  unloaded_DSEPC_group = list()
-  PLGA_group = list()
-  PLGA_loaded_DSEPC_group = list()
-
+  groups = dict()
   for ldx, line in enumerate(content.split('\n')):
     fields = filter(len, map(str.strip, line.split('\t')))
 
@@ -30,30 +27,26 @@ def _load_csv(csv_file):
         nuclei_type = thesis_label[0]
 
         data = map(float, (cav_energy_V2s, deformation_um))
-        grp = None
-        if nuclei_type == 'C':
-          grp = unloaded_DSEPC_group
-
-        if nuclei_type == 'P':
-          grp = PLGA_group
-
-        if nuclei_type == 'L':
-          grp = PLGA_loaded_DSEPC_group
-
+        grp = groups.get(nuclei_type, list())
         assert grp is not None
         grp.append(data)
+        groups[nuclei_type] = grp
 
   # convert each array of (cav_eng, deformation) into a 2 column matrix
-  return map(np.asarray, (unloaded_DSEPC_group, PLGA_group, PLGA_loaded_DSEPC_group))
+  for lbl in groups.keys():
+    groups[lbl] = np.asarray(groups[lbl])
+  return groups
 
-def main(csv_file=None, pdf=False, png=False, legend=False):
-  unloaded_DSEPC_group, PLGA_group, PLGA_loaded_DSEPC_group = _load_csv(csv_file)
+def main(csv_file=None, pdf=False, png=False, legend=False, logx=False, xlim=None, inset_xlim=None):
+  groups = _load_csv(csv_file)
   import matplotlib.pyplot as plt
   import matplotlib_setup
 
+  plt.figure(figsize=(14,10))
+
   plt.hold(True)
 
-  def plot_grp(grp, marker, label):
+  def plot_grp(ax, grp, marker, label):
     cav_e = grp[:,0]
     deform = grp[:,1]
 
@@ -62,23 +55,38 @@ def main(csv_file=None, pdf=False, png=False, legend=False):
 
     print 'group %s: mean energy=%.2f V^2 s, mean deformation=%.2f'%(label, cav_e_mean, deform_mean)
 
-    plt.plot(cav_e, deform, markersize=10, marker=marker, linestyle='None', label=label)
-    plt.plot(cav_e_mean, deform_mean, marker=marker, linestyle='None', markersize=15, color='k',
+    ax.plot(cav_e, deform, markersize=10, marker=marker, linestyle='None', label=label)
+    ax.plot(cav_e_mean, deform_mean, marker=marker, linestyle='None', markersize=15, color='k',
                                                                                       markerfacecolor='None',
                                                                                       markeredgewidth=2)
 
-    plt.gca().get_xaxis().get_major_formatter().set_powerlimits((0, 0))
+    ax.get_xaxis().get_major_formatter().set_powerlimits((0, 0))
 
-  plot_grp(unloaded_DSEPC_group, '^', 'C')
-  plot_grp(PLGA_group, 'o', 'P')
-  plot_grp(PLGA_loaded_DSEPC_group, 's', 'L')
+  markers = ['^', 'o', 's', 'v', 'H', 'p']
+  for marker, grp_data in zip(markers, groups.items()):
+    grp, data = grp_data
+    plot_grp(plt.gca(), data, marker, grp)
+
+  if logx:
+    plt.xscale('log')
+
+  if xlim:
+    plt.xlim(xlim)
 
   plt.xlabel('Cavitation Energy ($\mathrm{V}^2\mathrm{s}$)')
   plt.ylabel('Deformation Size (um)')
+  plt.grid()
 
   if legend:
     plt.legend()
-  plt.grid()
+
+  if inset_xlim:
+    a2 = plt.axes([0.5, 0.15, 0.36, 0.35])
+    for marker, grp_data in zip(markers, groups.items()):
+      grp, data = grp_data
+      plot_grp(a2, data, marker, grp)
+      a2.set_xlim(inset_xlim)
+      a2.grid(True)
 
   if not pdf and not png:
     from utils import keypress
@@ -110,6 +118,9 @@ def get_commandline_parser():
   parser.add_argument('-pdf', action='store_true', default=False, help='Plot will be saved to PDF instead of being shown')
   parser.add_argument('-png', action='store_true', default=False, help='Plot will be saved to PNG instead of being shown')
   parser.add_argument('-legend', action='store_true', default=False, help='Legend will be plotted')
+  parser.add_argument('-logx', action='store_true', default=False, help='X axis will be plotted log-scale')
+  parser.add_argument('-xlim', nargs=2, type=float, default=None, help='Limits of the x axis in')
+  parser.add_argument('-inset_xlim', nargs=2, type=float, default=None, help='Limits of the x axis in the inset')
   parser.add_argument('csv_file', type=str, help='CSV file containing cavitation energy and deformation data')
 
   return parser
