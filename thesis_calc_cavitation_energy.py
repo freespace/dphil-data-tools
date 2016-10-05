@@ -62,7 +62,7 @@ def main(power_file=None, binsize=5, max_bins=601, head_skip=0):
   # need to divide by the number of traces per seconds as sometimes
   # I capture 5/sec and sometime 1/s or 2.2/s. If I don't do this then
   # the 5/sec data will naturally have more 'energy'
-  print energy / traces_per_second
+  print energy / traces_per_second, '\t', duration, '\t', traces_per_second
 
 def parse_commandline_arguments():
   parser = get_commandline_parser()
