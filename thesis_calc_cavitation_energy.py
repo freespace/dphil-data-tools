@@ -37,7 +37,6 @@ def main(power_file=None, binsize=5, max_bins=601, head_skip=0):
     # python is unlikely to change how str(datetime) works so this is probably
     # ok for now.
     trigtime = datetime.strptime(trigtimestr, '%Y-%m-%d %H:%M:%S.%f')
-
     if starttime is None:
       starttime = trigtime
 
@@ -55,6 +54,7 @@ def main(power_file=None, binsize=5, max_bins=601, head_skip=0):
   duration = endtime - starttime
   duration = duration.total_seconds()
   pln('\tDuration:%.2f'%(duration))
+  pln('\t\t%s ---> %s'%(starttime, endtime))
 
   traces_per_second = len(filenamelist)/duration
   pln('\tTraces per second %f'%(traces_per_second))
