@@ -4,7 +4,7 @@ This script takes individual .power.npz files and constructs a spectrogram by
 stacking the power spectrum contained in each file.
 
 When binning is performed, the timestamp of a bin is the timestamp of the fist
-power spectrum in the bin, and power at each frequency is the mean power at
+power spectrum in the bin, and power at each frequency is the _mean_ power at
 each frequency of the power spectrums in the bin.
 
 Note that this used to produce spectrograms with a logged colourbar, but this is
@@ -86,6 +86,7 @@ def plot_spectrogram(**cmdargs):
   power_only = cmdargs['power_only']
   max_tduration = cmdargs['max_tduration']
   highpass = cmdargs['highpass']
+  spectrogram_max = cmdargs['spectrogram_max']
 
   binpower = None
   bincount = 0
@@ -171,6 +172,13 @@ def plot_spectrogram(**cmdargs):
     gs = gridspec.GridSpec(2, 1, height_ratios=[2,1])
 
     plt.subplot(gs[0])
+
+    vmax = spectrogram_max
+    if vmax is None:
+       # we use the 99th percentile here as otherwise a single high
+       # value will complete ruined the colourmap
+      vmax=np.percentile(spectrogram, 99)
+
     plt.imshow(spectrogram,
                aspect='auto',
                interpolation='none',
@@ -178,9 +186,7 @@ def plot_spectrogram(**cmdargs):
                cmap=cmdargs['cmap'],
                origin = 'lower',          # put low freq near (0,0)
                vmin=spectrogram.min(),
-               # we use the 99th percentile here as otherwise a single high
-               # value will complete ruined the colourmap
-               vmax=np.percentile(spectrogram, 99),
+               vmax=vmax,
                )
 
     plt.ylabel('Frequency (MHz)')
@@ -252,6 +258,7 @@ def plot_spectrogram(**cmdargs):
   ancillary_ylabel = cmdargs['ancillary_ylabel']
   ancillary_ylim = cmdargs['ancillary_ylim']
   ancillary_hline = cmdargs['ancillary_hline']
+  ancillary_hline2 = cmdargs['ancillary_hline2']
   ancillary_xoffset = cmdargs['ancillary_xoffset']
 
   if ancillary_data:
@@ -280,6 +287,10 @@ def plot_spectrogram(**cmdargs):
     if ancillary_hline is not None:
       xlim = ax.get_xlim()
       ax.hlines(ancillary_hline, xlim[0], xlim[1], linestyle='dashed', colors=['r'])
+
+    if ancillary_hline2 is not None:
+      xlim = ax.get_xlim()
+      ax.hlines(ancillary_hline2, xlim[0], xlim[1], linestyle='dashdot', colors=['r'])
 
   ##############################################################################
 
@@ -369,6 +380,8 @@ def get_commandline_parser():
 
   parser.add_argument('-highpass', type=float, default=0, help='Removes signals below the specified frequency (Hz)')
 
+  parser.add_argument('-spectrogram_max', type=float, default=None, help='Sets the maximum value of the spectrogram')
+
   parser.add_argument('-power_only', action='store_true', default=False, help='When given only the power-over-time series is plotted')
   parser.add_argument('-power_fit', type=int, default=-1, help='When >0, a polynomial of order n will be fitted to the data')
   parser.add_argument('-power_vlines', nargs='+', default=[], type=float, help='When given a vertical line will be plotted at the specified x position')
@@ -379,6 +392,7 @@ def get_commandline_parser():
   parser.add_argument('-ancillary_ylabel', type=str, default='', help='Specifies y label for ancillary data')
   parser.add_argument('-ancillary_ylim', type=float, nargs=2, help='Set y limits of right axis for ancillary data')
   parser.add_argument('-ancillary_hline', type=float, help='Adds a horizontal line to the ancillary plot')
+  parser.add_argument('-ancillary_hline2', type=float, help='Adds a second horizontal line to the ancillary')
   parser.add_argument('-ancillary_xoffset', type=float, help='Offset added to x values of ancillary data')
 
   parser.add_argument('-head_skip', type=int, default=0, help='Number of files to skip before head of the queue. Files will be sorted before skip is applied. Negative values are allowed, in which case it turns into tail skip')
