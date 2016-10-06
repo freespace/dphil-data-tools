@@ -20,13 +20,17 @@ def _load_csv(csv_file):
         print header
       else:
         print fields
-        experiment_group, phantom_id, thesis_label, cav_energy_V2s, deformation_um = fields
+        experiment_group, phantom_id, thesis_label, cav_energy_V2s, deformation_um = fields[:-3]
+        cracked = int(fields[-1])
+
 
         # group cav:deformation by cavitation nuclei type, which we can infer
         # from the first character of thesis_label
         nuclei_type = thesis_label[0]
 
         data = map(float, (cav_energy_V2s, deformation_um))
+        data.append(cracked)
+
         grp = groups.get(nuclei_type, list())
         assert grp is not None
         grp.append(data)
@@ -42,30 +46,37 @@ def main(csv_file=None, pdf=False, png=False, legend=False, logx=False, xlim=Non
   import matplotlib.pyplot as plt
   import matplotlib_setup
 
-  plt.figure(figsize=(14,10))
-
   plt.hold(True)
 
-  def plot_grp(ax, grp, marker, label):
+  def plot_grp(ax, grp, label):
+    label_to_style = dict( C=['o', 'g'],
+                            L=['s', 'r'],
+                            P=['^', 'b'],
+                            N=['<', 'y'],
+                            A=['v', 'm'],
+                            S=['h', 'c'])
+
     cav_e = grp[:,0]
     deform = grp[:,1]
+    cracked = grp[:,2]>0
+    marker, color = label_to_style[label]
 
     cav_e_mean = np.mean(cav_e)
     deform_mean = np.mean(deform)
 
     print 'group %s: mean energy=%.2f V^2 s, mean deformation=%.2f'%(label, cav_e_mean, deform_mean)
 
-    ax.plot(cav_e, deform, markersize=10, marker=marker, linestyle='None', label=label)
+    ax.plot(cav_e, deform, markersize=10, marker=marker, linestyle='none', label=label, color=color)
+    ax.plot(cav_e[cracked], deform[cracked], markersize=10, marker='x', linestyle='none', markeredgewidth=2, color='k')
+
     ax.plot(cav_e_mean, deform_mean, marker=marker, linestyle='None', markersize=15, color='k',
                                                                                       markerfacecolor='None',
                                                                                       markeredgewidth=2)
 
     ax.get_xaxis().get_major_formatter().set_powerlimits((0, 0))
 
-  markers = ['^', 'o', 's', 'v', 'H', 'p']
-  for marker, grp_data in zip(markers, groups.items()):
-    grp, data = grp_data
-    plot_grp(plt.gca(), data, marker, grp)
+  for grp, data in groups.items():
+    plot_grp(plt.gca(), data, grp)
 
   if logx:
     plt.xscale('log')
@@ -78,7 +89,7 @@ def main(csv_file=None, pdf=False, png=False, legend=False, logx=False, xlim=Non
   plt.grid()
 
   if legend:
-    plt.legend()
+    plt.legend(loc='best')
 
   if inset_xlim:
     a2 = plt.axes([0.5, 0.15, 0.36, 0.35])
