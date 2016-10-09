@@ -22,6 +22,9 @@ import matplotlib_setup
 
 mpl.rcParams['mathtext.default'] = 'regular'
 
+import dphil_paths
+from debug_print import pln
+
 def savefig(fig, *args, **kwargs):
   if not 'bbox_inches' in kwargs is None:
     kwargs['bbox_inches'] = 'tight'
@@ -240,6 +243,8 @@ def plot_spectrogram(**cmdargs):
 
   if power_fit > 0:
     coeffs = np.polyfit(tvec, total_power, power_fit)
+    pln('Power fit coefficients, highest power first', coeffs)
+
     fitfunc = np.poly1d(coeffs)
     plt.hold(True)
     plt.plot(tvec, fitfunc(tvec), color='k')
