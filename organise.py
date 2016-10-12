@@ -11,7 +11,11 @@ npz_vec = filter(lambda x:x.endswith('npz'), os.listdir('.'))
 
 
 def get_phantom_id(filename):
-  return filename.split('-')[3]
+  parts = filename.split('-')
+  if len(parts) > 3:
+    return parts[3]
+  else:
+    return None
 
 def get_LUT(filename):
   return os.path.splitext(filename.split('-')[-1])[0]
@@ -33,6 +37,7 @@ def main(files_to_organise, **kwargs):
   for fname in files_to_organise:
     key_set.add(key_func(os.path.basename(fname)))
 
+  key_set = filter(lambda x:x, list(key_set))
   print 'Got keys', key_set
 
   for key in key_set:
