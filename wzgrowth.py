@@ -183,7 +183,7 @@ def remove_outliers(rdx_vec, back_rdx_vec):
 
   return rdx_vec
 
-def find_min_rdx(secidx, section, threshold):
+def find_min_rdx(secidx, section, threshold, ignore_bad_rows=False, ignore_outliers=False):
     # basic protection against 'hot' pixels. The mechanism
     # employed here allows us to detect a crossings with 1
     # event even when we want 2 ideally
@@ -214,6 +214,9 @@ def find_min_rdx(secidx, section, threshold):
     if len(bad_row_sdx) == 1:
       p('!', False)
     else:
+      bad_row_sdx = []
+
+    if ignore_bad_rows:
       bad_row_sdx = []
 
     # find the proximal edge of the channel boundary
@@ -259,13 +262,14 @@ def find_min_rdx(secidx, section, threshold):
       rdx_vec = np.asarray(rdx_vec)
       back_rdx_vec = np.asarray(back_rdx_vec)
 
-      rdx_vec = remove_outliers(rdx_vec, back_rdx_vec)
+      if not ignore_outliers:
+        rdx_vec = remove_outliers(rdx_vec, back_rdx_vec)
 
       min_rdx = rdx_vec.min()
       assert min_rdx is not None
       return min_rdx
 
-def compute_growth(npz, debug, threshold=None):
+def compute_growth(npz, debug, threshold, **kwargs):
   scandata = load_scandata_with_correction(npz)
   nrows, ncols = scandata.matrix.shape
 
@@ -312,7 +316,7 @@ def compute_growth(npz, debug, threshold=None):
     else:
       p('.', False)
 
-    min_rdx = find_min_rdx(secidx, section, threshold)
+    min_rdx = find_min_rdx(secidx, section, threshold, **kwargs)
     if min_rdx is None:
       min_rdx = find_min_rdx(secidx, section, section.max()*0.5)
       p('o', False)
@@ -355,7 +359,7 @@ def compute_growth(npz, debug, threshold=None):
   ret = [t] + min_z_vec + [threshold]
   return np.asarray(ret)
 
-def main(scan_id=None, debug=False, suffix='', threshold=None, channel_width_um=None):
+def main(scan_id=None, debug=False, suffix='', threshold=None, channel_width_um=None, **kwargs):
   # keep reading scans until we run out
   scan_num = 0
   done = False
@@ -375,7 +379,7 @@ def main(scan_id=None, debug=False, suffix='', threshold=None, channel_width_um=
       done = True
       break
     p('%d'%(scan_num), False)
-    row_vec.append(compute_growth(npz, debug, threshold))
+    row_vec.append(compute_growth(npz, debug, threshold, **kwargs))
     if threshold is None:
       threshold = row_vec[-1][-1]
 
@@ -422,6 +426,8 @@ def get_commandline_parser():
   parser.add_argument('-suffix', type=str, default='', help='If given will be appeneded to output filename')
   parser.add_argument('-threshold', type=float, default=None, help='If given will be used as the threshold when computing where the fluorescence front is')
   parser.add_argument('-channel_width_um', type=float, default=370, help='Specifies the width of the channel to use when deriving reference fluorescence value. Ignored if -threshold is given. Default: 370 um')
+  parser.add_argument('-ignore_bad_rows', action='store_true', default=False, help='Disables bad row detection, useful when I have an image at 100 um not 50 um steps')
+  parser.add_argument('-ignore_outliers', action='store_true', default=False, help='Disables outlier detection')
   parser.add_argument('scan_id', type=str, help='Scan ID of scan to measure')
 
   return parser
