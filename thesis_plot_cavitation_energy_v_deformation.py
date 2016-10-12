@@ -4,6 +4,7 @@ from __future__ import division
 import numpy as np
 
 import dphil_paths
+from debug_print import pln
 
 def _load_csv(csv_file):
   # can't use the standard DataLoader b/c I need the text content
@@ -41,14 +42,27 @@ def _load_csv(csv_file):
     groups[lbl] = np.asarray(groups[lbl])
   return groups
 
-def main(csv_file=None, pdf=False, png=False, legend=False, logx=False, xlim=None, inset_xlim=None):
+def main( csv_file=None,
+          pdf=False,
+          png=False,
+          legend=False,
+          logx=False,
+          xlim=None,
+          inset_xlim=None,
+          no_group_centre=False,
+          hline=None,
+          ignore_PLGA=False):
   groups = _load_csv(csv_file)
   import matplotlib.pyplot as plt
   import matplotlib_setup
 
+  plt.figure(figsize=(8.1,5))
   plt.hold(True)
 
   def plot_grp(ax, grp, label):
+    if label == 'P' and ignore_PLGA:
+      pln('Ignoring PLGA group')
+      return
     label_to_style = dict( C=['o', 'g'],
                             L=['s', 'r'],
                             P=['^', 'b'],
@@ -67,11 +81,12 @@ def main(csv_file=None, pdf=False, png=False, legend=False, logx=False, xlim=Non
     print 'group %s: mean energy=%.2f V^2 s, mean deformation=%.2f'%(label, cav_e_mean, deform_mean)
 
     ax.plot(cav_e, deform, markersize=10, marker=marker, linestyle='none', label=label, color=color)
-    ax.plot(cav_e[cracked], deform[cracked], markersize=10, marker='x', linestyle='none', markeredgewidth=2, color='k')
+    ax.plot(cav_e[cracked], deform[cracked], markersize=10, marker='x', linestyle='none', markeredgewidth=1, color='k')
 
-    ax.plot(cav_e_mean, deform_mean, marker=marker, linestyle='None', markersize=15, color='k',
-                                                                                      markerfacecolor='None',
-                                                                                      markeredgewidth=2)
+    if not no_group_centre:
+      ax.plot(cav_e_mean, deform_mean, marker=marker, linestyle='None', markersize=15, color='k',
+                                                                                        markerfacecolor='None',
+                                                                                        markeredgewidth=2)
 
     ax.get_xaxis().get_major_formatter().set_powerlimits((0, 0))
 
@@ -85,8 +100,11 @@ def main(csv_file=None, pdf=False, png=False, legend=False, logx=False, xlim=Non
     plt.xlim(xlim)
 
   plt.xlabel('Cavitation Energy ($\mathrm{V}^2\mathrm{s}$)')
-  plt.ylabel('Deformation Size (um)')
+  plt.ylabel('Deformation Extent (um)')
   plt.grid()
+
+  if hline:
+    plt.hlines(hline, *plt.xlim(), color='r', linestyle='dashed')
 
   if legend:
     plt.legend(loc='best')
@@ -132,6 +150,10 @@ def get_commandline_parser():
   parser.add_argument('-logx', action='store_true', default=False, help='X axis will be plotted log-scale')
   parser.add_argument('-xlim', nargs=2, type=float, default=None, help='Limits of the x axis in')
   parser.add_argument('-inset_xlim', nargs=2, type=float, default=None, help='Limits of the x axis in the inset')
+  parser.add_argument('-no_group_centre', action='store_true', default=False, help='If given group centres will not be plotted')
+  parser.add_argument('-hline', type=float, default=None, help='If given a horizontal line will be plotted at the given y value')
+  parser.add_argument('-ignore_PLGA', action='store_true', default=False, help='If given PLGA group (P) will be ignored')
+
   parser.add_argument('csv_file', type=str, help='CSV file containing cavitation energy and deformation data')
 
   return parser
