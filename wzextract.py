@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """
-This script extracts individual Z scans from a WZ scan file
+This script extracts individual Z scans from a WZ scan file. Note that as of
+2016-10-10 the output Z positions will be corrected for refractive index mismatch
 """
 
 from __future__ import division
