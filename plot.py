@@ -60,7 +60,7 @@ class Plot(object):
 
     self.plotkwargs = {
         'solid_capstyle':'butt',
-        'markersize':4,
+        'markersize':self.markersize,
         'linewidth':1.2,
         }
     self.textkwargs = {
@@ -553,7 +553,10 @@ def get_commandline_parser():
   parser.add_argument('-title', default='', help='Plot title')
 
   parser.add_argument('-linestyles', nargs='+', default=None, help='If given, data series will be rendered using the specified linestyle. If number of series exceeds number of linestyles, then the last given linestyle will be used for the remaining series.')
+
   parser.add_argument('-markerstyles', nargs='+', default=None, help='If given, data series will be rendered using the specified linestyle. If the number of series execeeds the number of markerstyles, then the last given markerstyle will be used for the remaining series')
+  parser.add_argument('-markersize', type=float, default=4.0, help='Specifies the size of markers, defaults to 1.0')
+
   parser.add_argument('-color_cycle_length', type=int, default=None, help='If given, the colors will reset and cycle from the beginning every n data series')
   parser.add_argument('-show_start_time', action='store_true', help='If given, the time of the first csv file will be shown as a label in the top-right.')
   parser.add_argument('-t0', type=float, default=None, help='Value to use as t=0 when displaying time points on the x-axis.')
