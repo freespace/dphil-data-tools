@@ -4,16 +4,7 @@ from __future__ import division
 import numpy as np
 
 import dphil_paths
-
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+from debug_print import bcolors
 
 def compute(growth_npz, debug):
   from dataloader import DataLoader
@@ -50,8 +41,11 @@ def compute(growth_npz, debug):
 
   print '\tu_1 - u_0'
   # http://stattrek.com/sampling/difference-in-means.aspx?tutorial=ap
+  # http://onlinestatbook.com/2/sampling_distributions/samplingdist_diff_means.html
+  # Note that the result is the standard error of the mean, which is the
+  # standard deviation in difference of mean
   sd_diff = (sd0**2/residual_vec_pre_US.size + sd1**2/residual_vec_post_US.size)**0.5
-  print bcolors.WARNING + '\t\t%.2f'%(u1-u0), '\tSD=%.2f'%(sd_diff), bcolors.ENDC
+  print bcolors.WARNING + '\t\t%.2f'%(u1-u0), '\tSEM=%.2f'%(sd_diff), bcolors.ENDC
 
   import scipy.stats as stats
   print '\tDependent t-test'
