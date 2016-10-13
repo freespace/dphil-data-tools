@@ -81,6 +81,10 @@ class DataLoader(object):
         source = 'calc_power_spectrum.py'
       else:
         source = None
+      
+      if source == 'fig2npz.py':
+        matrix = npzfile['data']
+        xylabel = npzfile['xlabel'], npzfile['ylabel']
 
       if source == 'thesis_power_fit.py':
         matrix = npzfile['fit_matrix']
