@@ -75,7 +75,7 @@ def get_stats(xvec, yvec, noauc=False, asdict=False):
     - median
     - mean
     - stdev (standard deviation)
-    - area-under-curve (=sum(y-y.mode))
+    - area-under-curve (sum(abs(y))
     - FWHM, valid only if you know there is a single peak, and the mode
       correspods to the noise floor.
     - FWHM_x, contains values that bound the computed FWHM
