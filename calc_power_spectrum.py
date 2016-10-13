@@ -169,7 +169,7 @@ def _process_data(inputfile, tvec, yvec, trigtime, **cmdargs):
   datadict = dict(data=outmat, header=metadata, source='calc_power_spectrum.py')
   return datadict
 
-def _loadtrc(fname, fcontent):
+def _loadtrc(fname, fcontent=None):
   p('Loading %s'%(fname))
   from dataloader import DataLoader
   data = DataLoader(fname, fcontent)
