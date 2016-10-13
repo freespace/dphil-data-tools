@@ -51,6 +51,7 @@ def main( csv_file=None,
           inset_xlim=None,
           no_group_centre=False,
           hline=None,
+          vline=None,
           ignore_PLGA=False):
   groups = _load_csv(csv_file)
   import matplotlib.pyplot as plt
@@ -106,6 +107,9 @@ def main( csv_file=None,
   if hline:
     plt.hlines(hline, *plt.xlim(), color='r', linestyle='dashed')
 
+  if vline:
+    plt.vlines(vline, *plt.ylim(), color='k', linestyle='dashed')
+
   if legend:
     plt.legend(loc='best')
 
@@ -152,6 +156,7 @@ def get_commandline_parser():
   parser.add_argument('-inset_xlim', nargs=2, type=float, default=None, help='Limits of the x axis in the inset')
   parser.add_argument('-no_group_centre', action='store_true', default=False, help='If given group centres will not be plotted')
   parser.add_argument('-hline', type=float, default=None, help='If given a horizontal line will be plotted at the given y value')
+  parser.add_argument('-vline', type=float, default=None, help='If given a vertical line will be plotted at the given x value')
   parser.add_argument('-ignore_PLGA', action='store_true', default=False, help='If given PLGA group (P) will be ignored')
 
   parser.add_argument('csv_file', type=str, help='CSV file containing cavitation energy and deformation data')
