@@ -294,10 +294,12 @@ class Plot(object):
     ax = self._ax
 
     if use_right:
+      lax = ax
       ax = ax.twinx()
       ax.set_ylabel(self.right_ylabel)
       if self.right_ylim:
         ax.set_ylim(*self.right_ylim)
+      lax.plot(np.nan, color=lc, marker=marker, label=l)
 
     ax.errorbar(xnew,
                 ynew,
@@ -310,6 +312,7 @@ class Plot(object):
                 errorevery=errorevery,
                 **self.plotkwargs)
 
+    # nasty hack to get right axis labels to show up in legends
 
   def plot(self):
     """
@@ -365,8 +368,8 @@ class Plot(object):
       if csvfile.endswith(']'):
         csvfile, colspec = csvfile.rsplit('[', 1)
         colspec = colspec[:-1]
-        if ':' in colspec:
-          csv_xdx, csv_ydx = map(int, colspec.split(':'))
+        if ',' in colspec:
+          csv_xdx, csv_ydx = map(int, colspec.split(','))
         else:
           csv_ydx = int(colspec)
 
@@ -640,9 +643,9 @@ def get_commandline_parser():
 
   parser.add_argument('-comments', type=str, nargs='+', default=None, help='If given, will be displayed in top left of plot in background. Not affected by -no_debug')
   parser.add_argument('csvfiles', nargs='+', help="""
-  CSV/npz/trc files to plot. Column index for x and y can be specified by appending [x:y] or [y], e.g.
+  CSV/npz/trc files to plot. Column index for x and y can be specified by appending [y] or [x,y], e.g.
 
-      filename.npz[2:3] or filename.npz[3]
+      filename.npz[2,3] or filename.npz[3]
 
   This overrides -yindex or -xindex. x and y are 1-based""")
 
