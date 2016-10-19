@@ -361,9 +361,14 @@ class Plot(object):
       csvfile = csvfiles[csvidx]
 
       csv_ydx = None
+      csv_xdx = None
       if csvfile.endswith(']'):
-        csvfile, ydx = csvfile.rsplit('[', 1)
-        csv_ydx = int(ydx[:-1])
+        csvfile, colspec = csvfile.rsplit('[', 1)
+        colspec = colspec[:-1]
+        if ':' in colspec:
+          csv_xdx, csv_ydx = map(int, colspec.split(':'))
+        else:
+          csv_ydx = int(colspec)
 
       print 'Plotting',csvfile
       data = DataLoader(csvfile)
@@ -386,13 +391,18 @@ class Plot(object):
       else:
         lbl = None
 
-      xvec = data.matrix[:,self.xindex-1]
+      xdx = self.xindex - 1
+      if csv_xdx is not None:
+        xdx = csv_xdx - 1
 
-      ydx = self.yindex-1
+      print 'Using x-index:', xdx + 1
+      xvec = data.matrix[:,xdx]
+
+      ydx = self.yindex - 1
       if csv_ydx is not None:
-        ydx = csv_ydx-1
+        ydx = csv_ydx - 1
 
-      print 'Using y-index:',ydx+1
+      print 'Using y-index:',ydx + 1
       yvec = data.matrix[:,ydx]
 
       yerr = None
@@ -406,7 +416,7 @@ class Plot(object):
 
       if data.source == 'calc_power_spectrum.py':
         xvec /= 1000
-        self.logy = True
+        #self.logy = True
 
       if self.register_on_ymax:
         maxidx = np.argmax(yvec)
@@ -449,15 +459,16 @@ class Plot(object):
     if self.logy == True:
       ax.set_yscale('log')
 
-    xlabel, ylabel = data.xy_labels
+    xlabel = self.xlabel
+    ylabel = self.ylabel
 
-    if self.xlabel is not None:
-      xlabel = self.xlabel
-    if self.ylabel is not None:
-      ylabel = self.ylabel
+    if xlabel is None:
+      xlabel = data.xy_labels[0]
+    if ylabel is None:
+      ylabel = data.xy_labels[1]
 
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
+    ax.set_xlabel(max('', xlabel))
+    ax.set_ylabel(max('', ylabel))
 
     if self.no_legend == False:
       if self.labels is not None:
@@ -582,8 +593,8 @@ def get_commandline_parser():
   parser.add_argument('-xindex', type=int, default=1, help='Index of column (1..) to use for x axis')
   parser.add_argument('-yindex', type=int, default=2, help='Index of colunm (1..) to use for y axis')
 
-  parser.add_argument('-xlabel', type=str, default='', help='X label.')
-  parser.add_argument('-ylabel', type=str, default='', help='Y label.')
+  parser.add_argument('-xlabel', type=str, default=None, help='X label.')
+  parser.add_argument('-ylabel', type=str, default=None, help='Y label.')
   parser.add_argument('-right_ylabel', type=str, default='',  help='Right Y label.')
 
   parser.add_argument('-legend_position', type=str, default='best', help='Matplotlib position to put the legend, defaults to "upper right". Note this must be quoted')
@@ -611,7 +622,7 @@ def get_commandline_parser():
   parser.add_argument('-hline_color', type=str, default='red', help='Specifies the colour of hlines, defaults to red')
 
   parser.add_argument('-fwhm', action='store_true', default=False, help='If given, FWHM will be computed and plotted.')
-  parser.add_argument('-figsize', type=float, nargs=2, default=None, help='If given, the figure size will be set as given, in inches')
+  parser.add_argument('-figsize', type=float, nargs=2, default=(8.1, 5), help='If given, the figure size will be set as given, in inches')
 
   parser.add_argument('-interp', action='store_true', default=False, help='If given, each series will be interpolated using a cubic')
   parser.add_argument('-lowpass', type=float, default=None, help='If given, each series will be low pass filtered, with the cutoff as specified in Hz. When used wit interp, low pass filtering occurs first')
@@ -628,7 +639,12 @@ def get_commandline_parser():
   parser.add_argument('-include_first_last', action='store_true', default=False, help='If given, the first and last csv given is always plotted, regardless of skip, max_traces, or start_offset')
 
   parser.add_argument('-comments', type=str, nargs='+', default=None, help='If given, will be displayed in top left of plot in background. Not affected by -no_debug')
-  parser.add_argument('csvfiles', nargs='+', help='CSV/npz/trc files to plot. Append [n], e.g. filename.npz[n], to use the nth column. This overrides the -yindex value. 1-based.')
+  parser.add_argument('csvfiles', nargs='+', help="""
+  CSV/npz/trc files to plot. Column index for x and y can be specified by appending [x:y] or [y], e.g.
+
+      filename.npz[2:3] or filename.npz[3]
+
+  This overrides -yindex or -xindex. x and y are 1-based""")
 
   return parser
 
