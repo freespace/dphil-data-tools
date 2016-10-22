@@ -45,14 +45,15 @@ def compute_line_profile(profile_npz, peak_idx=None):
       sample_zdist_vec.pop(0)
     sample_idx -= 1
 
-  parts = profile_npz.split('-')
+  from os.path import basename
+  parts = basename(profile_npz).split('-')
   scan_num = int(parts[1])
   time = scan_num * 2
 
   if isfirst:
     tabprint('time(s)/dist (um)\t')
     for dist in map(lambda x:x[0], samples):
-      tabprint('%10.4f\t'%(dist))
+      tabprint('%10.4f'%(dist))
     print ''
 
 
