@@ -21,9 +21,14 @@ def _load_csv(csv_file):
         print header
       else:
         print fields
-        experiment_group, phantom_id, thesis_label, cav_energy_V2s, deformation_um = fields[:-3]
-        cracked = int(fields[-1])
+        experiment_group, phantom_id, thesis_label, cav_energy_V2s, deformation_um = fields[:5]
+        duration, traces_per_sec = fields[5:8]
 
+        if len(fields) >= 8:
+          cracked = int(fields[-1])
+        else:
+          pln('Cracked column not found, continuing assuming False')
+          cracked = False
 
         # group cav:deformation by cavitation nuclei type, which we can infer
         # from the first character of thesis_label
@@ -52,7 +57,8 @@ def main( csv_file=None,
           no_group_centre=False,
           hline=None,
           vline=None,
-          ignore_PLGA=False):
+          ignore_PLGA=False,
+          xlabel=None):
   groups = _load_csv(csv_file)
   import matplotlib.pyplot as plt
   import matplotlib_setup
@@ -100,7 +106,9 @@ def main( csv_file=None,
   if xlim:
     plt.xlim(xlim)
 
-  plt.xlabel('Cavitation Energy ($\mathrm{V}^2\mathrm{s}$)')
+  if xlabel is None:
+    xlabel = 'Cavitation Energy ($\mathrm{V}^2\mathrm{s}$)'
+  plt.xlabel(xlabel)
   plt.ylabel('Deformation Extent (um)')
   plt.grid()
 
@@ -154,6 +162,7 @@ def get_commandline_parser():
   parser.add_argument('-logx', action='store_true', default=False, help='X axis will be plotted log-scale')
   parser.add_argument('-xlim', nargs=2, type=float, default=None, help='Limits of the x axis in')
   parser.add_argument('-inset_xlim', nargs=2, type=float, default=None, help='Limits of the x axis in the inset')
+  parser.add_argument('-xlabel', type=str, default=None, help='If given overrides default x label')
   parser.add_argument('-no_group_centre', action='store_true', default=False, help='If given group centres will not be plotted')
   parser.add_argument('-hline', type=float, default=None, help='If given a horizontal line will be plotted at the given y value')
   parser.add_argument('-vline', type=float, default=None, help='If given a vertical line will be plotted at the given x value')
