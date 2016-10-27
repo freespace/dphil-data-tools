@@ -25,7 +25,7 @@ class CSVProxy(object):
 
 import itertools
 linestyles = ['-', '--', '-.', ':']
-markerstyles = ['o', 'v','^', 's', 'p', '*', 'h', 'H', '+', 'x', 'D']
+markerstyles = ['None', 'o', 'v','^', 's', 'p', '*', 'h', 'H', '+', 'x', 'D']
 linecolors = ['b', 'r', 'g', 'c', 'm', 'orange', 'k']
 linespecs = list(itertools.product(linestyles, markerstyles, linecolors))
 linespec_idx = 0
@@ -74,6 +74,8 @@ class Plot(object):
     # whether we are plotting a single csv file
     self._single = len(self.csvfiles) == 1
 
+    self._first_trace_ymax = None
+
 
   def __getattr__(self, attr):
     if attr in self._kwargs:
@@ -87,7 +89,10 @@ class Plot(object):
     suffix = list()
 
     if self.normalise:
-      suffix.append('NR')
+      suffix.append('NORM')
+
+    if self.normalise_on_first:
+      suffix.append('NORM1')
 
     if self.sub_y0:
       suffix.append('SUBY0')
@@ -441,6 +446,14 @@ class Plot(object):
         yvec -= yvec.min()
         yvec /= yrange
 
+      if self.normalise_on_first:
+        if self._first_trace_ymax is None:
+          self._first_trace_ymax = yvec.max()
+
+        yrange = self._first_trace_ymax - yvec.min()
+        yvec -= yvec.min()
+        yvec /= yrange
+
       if self.differentiate:
         dy = yvec[1:] - yvec[:-1]
         yvec = dy
@@ -605,6 +618,7 @@ def get_commandline_parser():
   parser.add_argument('-no_legend', action='store_true', default=False, help='If given no legend will be plotted.')
 
   parser.add_argument('-normalise', action='store_true', default=False, help='If given, the y-values will be normalised to be between [0..1].')
+  parser.add_argument('-normalise_on_first', action='store_true', default=False, help='If given, the y-values will be normalised using maxy(y) of the first trace.')
 
   parser.add_argument('-logy', action='store_true', default=False, help='If given, the y-axis will be log')
   parser.add_argument('-yerror_index', type=int, default=None, help='If given, errorbars will be plotted using data in the specified column (1..)')
