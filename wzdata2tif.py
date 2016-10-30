@@ -17,20 +17,10 @@ The script performs certain adjustments to make the output compatible with fluor
 In images produced by this program, the Z position *always* increases as one moves left-to-right.
 """
 from __future__ import division
-import os
-# we will need YZScanData from SIOS. Should fix this at some point
-homedir = os.path.expanduser('~')
-SIOS_PATH=['/data/DPhil/code/SIOS_control',
-            os.path.join(homedir, 'DPhil', 'code', 'SIOS_control')]
 
-import sys
-sys.path = SIOS_PATH + sys.path
-
-import matplotlib
-matplotlib.use('Qt4Agg')
-
-import matplotlib.pyplot as plt
 import numpy as np
+
+import dphil_paths
 
 def convert(datafile, non_square_pixel=False, row_step=1, not_in_water=False):
   npzfile = np.load(datafile)
