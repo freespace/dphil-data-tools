@@ -44,7 +44,7 @@ def add_title_legend(fig=plt.gcf(), nrows=1, xpos=0.5, ypos=1.1):
       bbox_to_anchor=(xpos, ypos),
       ncol=ncol)
 
-def savefig(filename, formats=None, figure=None, silent=False, pixelsize_um=None):
+def savefig(filename, formats=None, figure=None, silent=False, pixelsize_um=None, can_overwrite=False):
   """
   Wrapper around matplotlib's savefig with some common options built in
 
@@ -58,7 +58,8 @@ def savefig(filename, formats=None, figure=None, silent=False, pixelsize_um=None
   savefig operation is then performed with this new filename. This allows
   for saving multiple formats in one go.
 
-  Note that if the destination already exists, saving will not occur.
+  Note that if the destination already exists, saving will not occur unless
+  can_overwrite is True
   """
   if formats is None:
     filenamevec = [filename]
@@ -72,7 +73,7 @@ def savefig(filename, formats=None, figure=None, silent=False, pixelsize_um=None
 
   from os.path import exists
   for fname in filenamevec:
-    if exists(fname):
+    if exists(fname) and not can_overwrite:
       print 'Not saving to %s, file exists'%(fname)
     else:
       if figure is None:
