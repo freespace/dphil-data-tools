@@ -83,6 +83,9 @@ def get_npz(scan_id, scan_number):
   # get files ending in NPZ
   npzfilenames = filter(lambda x:x.endswith('.npz'), filter(os.path.isfile, os.listdir('.')))
 
+  # filter out filenames with __
+  npzfilenames = filter(lambda x:not '__' in x, npzfilenames)
+
   # match on scan_id
   npzfilenames = filter(lambda x: scan_id in x, npzfilenames)
 
@@ -343,10 +346,12 @@ def compute_growth(npz, debug, threshold, **kwargs):
       mat[startrow:endrow,min_rdx_vec[secidx]+1] = np.ones(endrow-startrow) * mat.max()
 
     extent = [scandata.zpositionvec.min(), scandata.zpositionvec.max()]
-    extent += [scandata.wpositionvec.min(), scandata.wpositionvec.max()]
+    extent += [scandata.wpositionvec.max(), scandata.wpositionvec.min()]
 
     plt.imshow(mat, interpolation='None', extent=extent)
     plt.colorbar()
+    plt.xlabel('Z Position (um)')
+    plt.ylabel('Fluorescence Value')
     plt.gcf().canvas.mpl_connect('key_press_event', keypress)
 
     plt.show()
