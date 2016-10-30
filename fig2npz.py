@@ -67,7 +67,7 @@ def parse_commandline_arguments():
 
 def get_commandline_parser():
   import argparse
-  parser = argparse.ArgumentParser(description='Converts 2D SIOS scans to TIFF images')
+  parser = argparse.ArgumentParser(description='Extracts data from .fig into .npz')
   parser.add_argument('-debug',
                       action='store_true',
                       help='If given the extracted data is plotted and not saved')
