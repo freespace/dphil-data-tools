@@ -134,12 +134,16 @@ def p(s):
   sys.stderr.write('\n')
 
 def _process_data(inputfile, tvec, yvec, trigtime, **cmdargs):
-  start_time = parse_number(cmdargs['start_time'])
+  start_time = cmdargs['start_time']
+  if start_time == 'start':
+    start_time = tvec[0]
+  else:
+    start_time = parse_number(start_time)
+
   exposure_duration = parse_number(cmdargs['exposure_duration'])
   end_time = start_time + exposure_duration
 
   nsamples = len(tvec)
-
   windowmask = np.logical_and(tvec >= start_time, tvec < end_time)
 
   tvec = tvec[windowmask]
