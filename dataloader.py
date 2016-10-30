@@ -81,7 +81,7 @@ class DataLoader(object):
         source = 'calc_power_spectrum.py'
       else:
         source = None
-      
+
       if source == 'fig2npz.py':
         matrix = npzfile['data']
         xylabel = npzfile['xlabel'], npzfile['ylabel']
@@ -96,7 +96,7 @@ class DataLoader(object):
 
       if source == 'wzgrowth.py':
         matrix = npzfile['growth_matrix']
-        xylabel = 'Time', 'Growth (um)'
+        xylabel = 'Time (s)', 'Fluorescence Front Displacement (um)'
 
       if source == 'SIOS':
         scandata = npzfile['scandata'].item()
@@ -108,7 +108,7 @@ class DataLoader(object):
       if source == 'calc_power_spectrum.py':
         matrix = npzfile['data']
         header = npzfile['header'].item()
-        xylabel =  'Frequency (KHz)', '$V^{\ 2}$'
+        xylabel =  'Frequency (KHz)', '$V^{\ 2}$/Hz'
 
       if source == 'wzextract.py':
         matrix = npzfile['data']
