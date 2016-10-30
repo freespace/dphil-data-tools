@@ -13,7 +13,7 @@ def pln(s):
   p(s)
   p('\n')
 
-def main(power_file=None, binsize=5, max_bins=601, head_skip=0):
+def main(power_file=None, binsize=5, max_bins=601, head_skip=0, variance=False):
   npz = np.load(power_file)
   filenamelist = npz.keys()
   pln('\t%d merged files'%(len(filenamelist)))
@@ -28,7 +28,11 @@ def main(power_file=None, binsize=5, max_bins=601, head_skip=0):
     datadict = npz[fname].item()
     data = datadict['data']
     powervec = data[:,1]
-    energy += sum(powervec)
+
+    if variance:
+      energy += np.var(powervec)
+    else:
+      energy += sum(powervec)
 
     header = datadict['header']
     trigtimestr = header['trigtime']
@@ -75,6 +79,7 @@ def get_commandline_parser():
   parser.add_argument('-head_skip', type=int, default=0, help='Number of files to skip before head of the queue. Files will be sorted before skip is applied. Negative values are allowed, in which case it turns into tail skip')
   parser.add_argument('-binsize', type=int, default=5, help='Perform binning with the given bin size. Bin size does not have to be a integer divisor of the number of samples')
   parser.add_argument('-max_bins', type=int, default=601, help='Plot no more than this number of bins')
+  parser.add_argument('-variance', action='store_true', default=False, help='If given the total variance is calculated instead of energy')
   parser.add_argument('power_file', type=str, help='Merged npz output produced by calc_power_spectrum.py')
 
   return parser
