@@ -27,7 +27,7 @@ import itertools
 linestyles = ['-', '--', '-.', ':']
 markerstyles = ['None', 'o', 'v','^', 's', 'p', '*', 'h', 'H', '+', 'x', 'D']
 linecolors = ['b', 'r', 'g', 'c', 'm', 'orange', 'k']
-linespecs = list(itertools.product(linestyles, markerstyles, linecolors))
+linespec_vec = list(itertools.product(markerstyles, linestyles, linecolors))
 linespec_idx = 0
 
 def reset_linespec():
@@ -36,10 +36,10 @@ def reset_linespec():
 
 def _next_linespec():
   global linespec_idx
-  ls = list(linespecs[linespec_idx])
-  ls[1], ls[2] = ls[2], ls[1]
-  linespec_idx = (linespec_idx+1)%len(linespecs)
-  return ls
+  ms, ls, lc = linespec_vec[linespec_idx]
+  linespec_idx = (linespec_idx+1)%len(linespec_vec)
+
+  return ls, lc, ms
 
 class Plot(object):
   def __init__(self, **kwargs):
