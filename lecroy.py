@@ -263,7 +263,7 @@ class LecroyBinaryWaveform(object):
                      'ground',
                      'DC_1MOhm',
                      'ground',
-                     'AC,_1MOhm']
+                     'AC_1MOhm']
     return coupling_desc[v]
 
   def read_processing_done(self, addr):
@@ -336,6 +336,10 @@ def main(**cmdargs):
 
     if convert_csv:
       bwf.savecsv(tf+'.csv')
+    else:
+      print 'Metadata:'
+      for key,value in bwf.metadata.items():
+        print '%s=%s'%(key, value)
 
     if print_trigtime:
       print(bwf.TRIG_TIME)
