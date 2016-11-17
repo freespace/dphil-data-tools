@@ -181,6 +181,13 @@ def _loadtrc(fname, fcontent=None):
   yvec = data.matrix[:, 1]
   if data.source == 'LECROYWR104Xi_binary':
     trigtime = data.source_obj.TRIG_TIME
+    coupling = data.source_obj.VERT_COUPLING
+    assert coupling in ['DC_50_Ohms', 'DC_1MOhm']
+    if coupling == 'DC_1MOhm':
+      # if coupling is 1 MOhm not 50 MOhm then scale everything down by 2 as the
+      # SRS thinks it is driving a 50 Ohm load with a source impedance of 50 Ohm
+      p('\tCorrecting for 1 MOhm coupling')
+      yvec *= 0.5
   else:
     trigtime = None
 
