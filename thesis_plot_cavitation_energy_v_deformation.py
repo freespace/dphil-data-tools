@@ -22,7 +22,7 @@ def _load_csv(csv_file):
       else:
         print fields
         experiment_group, phantom_id, thesis_label, cav_energy_V2s, deformation_um = fields[:5]
-        duration, traces_per_sec = fields[5:8]
+        duration, traces_per_sec = fields[5:7]
 
         if len(fields) >= 8:
           cracked = int(fields[-1])
@@ -107,7 +107,7 @@ def main( csv_file=None,
     plt.xlim(xlim)
 
   if xlabel is None:
-    xlabel = 'Cavitation Energy ($\mathrm{V}^2\mathrm{s}$)'
+    xlabel = 'Total Cavitation Noise Energy ($\mathrm{V}^2\mathrm{s}$)'
   plt.xlabel(xlabel)
   plt.ylabel('Deformation Extent (um)')
   plt.grid()
